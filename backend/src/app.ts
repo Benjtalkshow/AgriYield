@@ -9,6 +9,7 @@ import { initializeMagic } from "./config/magic"
 import farmRoutes from "./routes/farm.routes"
 import investmentRoutes from "./routes/investment.routes"
 import authRoutes from "./routes/auth.routes"
+import { setupSwagger } from "./config/swagger"
 
 
 
@@ -73,6 +74,8 @@ app.use((req, res, next) => {
       "token",
       "apiKey",
       "secret",
+      "token",
+      "magicToken"
     ]
     sensitiveFields.forEach((field) => {
       if (logBody[field]) logBody[field] = "[REDACTED]"
@@ -106,6 +109,9 @@ app.get("/api/health", (req, res) => {
 app.use("/api/farms", farmRoutes)
 app.use("/api/investments", investmentRoutes)
 app.use("/api/auth", authRoutes)
+
+setupSwagger(app)
+
 
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

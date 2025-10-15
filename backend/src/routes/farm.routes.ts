@@ -327,7 +327,7 @@ router.get("/farmer/:farmerId",authenticate, FarmController.getFarmsByFarmer)
  *       200:
  *         description: List of pending farms
  */
-router.get("/pending", FarmController.getPendingFarms)
+router.get("/pending", authenticate, FarmController.getPendingFarms)
 
 /**
  * @swagger
@@ -350,6 +350,6 @@ router.get("/pending", FarmController.getPendingFarms)
  *       404:
  *         description: Farm not found
  */
-router.put("/:id/delist", FarmController.delistFarm)
+router.put("/:id/delist", authenticate, FarmController.delistFarm)
 
 export default router

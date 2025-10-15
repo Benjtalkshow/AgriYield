@@ -68,7 +68,7 @@ export class AuthController {
                 },
             })
         } catch (error: any) {
-            console.error("[v0] Signup error:", error)
+            console.error("Signup error:", error)
             res.status(500).json({
                 success: false,
                 message: error.message || "Registration failed",
@@ -168,7 +168,7 @@ export class AuthController {
                 },
             })
         } catch (error: any) {
-            console.error("[v0] Connect wallet error:", error)
+            console.error("Connect wallet error:", error)
 
             if (error.message.includes("already connected")) {
                 res.status(409).json({
@@ -238,7 +238,7 @@ export class AuthController {
                 },
             })
         } catch (error: any) {
-            console.error("[v0] Get profile error:", error)
+            console.error(" Get profile error:", error)
             res.status(500).json({
                 success: false,
                 message: error.message || "Failed to retrieve profile",
