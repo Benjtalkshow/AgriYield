@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken"
 import { User, IUser } from "../models/user.model"
 import { envConfig } from "../config/env"
 import { verifyMagicToken } from "../config/magic"
+import { isAddress } from "ethers"
 
 export interface RegisterUserPayload {
   email: string
@@ -181,7 +182,7 @@ export class AuthService {
   }
 
   private static isValidWalletAddress(address: string): boolean {
-    return /^0x[a-fA-F0-9]{40}$/.test(address)
+    return isAddress(address)
   }
 
   static async userExists(email: string): Promise<boolean> {
