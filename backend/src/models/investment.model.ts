@@ -93,4 +93,4 @@ investmentSchema.virtual("daysUntilNextPayout").get(function (this: IInvestment)
 // Note: Pre-save middleware removed for now - payout calculations will be handled in service layer
 
 export const Investment: Model<IInvestment> = mongoose.model<IInvestment>("Investment", investmentSchema)
-export default Investmentl
+export default Investment
