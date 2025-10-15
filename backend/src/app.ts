@@ -2,17 +2,20 @@ import express from "express"
 import cors from "cors"
 import helmet from "helmet"
 // import { initializeBlockchain } from "./config/blockchain"
-// import { initializeMagic } from "./config/magic"
+import { initializeMagic } from "./config/magic"
+
 
 // Import routes
 import farmRoutes from "./routes/farm.routes"
 import investmentRoutes from "./routes/investment.routes"
+import authRoutes from "./routes/auth.routes"
+
 
 
 // (async () => {
 //   await initializeBlockchain()
 // })()
-// initializeMagic()
+initializeMagic()
 
 const app = express()
 
@@ -102,6 +105,8 @@ app.get("/api/health", (req, res) => {
 // API Routes
 app.use("/api/farms", farmRoutes)
 app.use("/api/investments", investmentRoutes)
+app.use("/api/auth", authRoutes)
+
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Error:", err)

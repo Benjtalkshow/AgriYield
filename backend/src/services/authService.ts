@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import { User, IUser } from "../models/user.model"
+import { User, type IUser } from "../models/user.model"
 import { envConfig } from "../config/env"
 import { verifyMagicToken } from "../config/magic"
 import { isAddress } from "ethers"

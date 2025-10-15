@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { FarmController } from "../controllers/farm.controller"
+import { authenticate } from "../middleware/auth.middleware"
 
 const router = Router()
 
@@ -94,7 +95,7 @@ const router = Router()
  *       400:
  *         description: Invalid input
  */
-router.post("/", FarmController.createFarm)
+router.post("/", authenticate, FarmController.createFarm)
 
 /**
  * @swagger
@@ -145,7 +146,7 @@ router.post("/", FarmController.createFarm)
  *       200:
  *         description: List of farms
  */
-router.get("/", FarmController.getFarms)
+router.get("/",authenticate, FarmController.getFarms)
 
 /**
  * @swagger
@@ -184,7 +185,7 @@ router.get("/", FarmController.getFarms)
  *       200:
  *         description: Search results
  */
-router.get("/search", FarmController.searchFarms)
+router.get("/search",authenticate, FarmController.searchFarms)
 
 /**
  * @swagger
@@ -205,7 +206,7 @@ router.get("/search", FarmController.searchFarms)
  *       404:
  *         description: Farm not found
  */
-router.get("/:id", FarmController.getFarmById)
+router.get("/:id",authenticate, FarmController.getFarmById)
 
 /**
  * @swagger
@@ -232,7 +233,7 @@ router.get("/:id", FarmController.getFarmById)
  *       404:
  *         description: Farm not found
  */
-router.put("/:id", FarmController.updateFarm)
+router.put("/:id",authenticate, FarmController.updateFarm)
 
 /**
  * @swagger
@@ -253,7 +254,7 @@ router.put("/:id", FarmController.updateFarm)
  *       404:
  *         description: Farm not found
  */
-router.delete("/:id", FarmController.deleteFarm)
+router.delete("/:id",authenticate, FarmController.deleteFarm)
 
 /**
  * @swagger
@@ -272,7 +273,7 @@ router.delete("/:id", FarmController.deleteFarm)
  *       200:
  *         description: Farm summary
  */
-router.get("/:id/summary", FarmController.getFarmSummary)
+router.get("/:id/summary",authenticate, FarmController.getFarmSummary)
 
 /**
  * @swagger
@@ -293,7 +294,7 @@ router.get("/:id/summary", FarmController.getFarmSummary)
  *       404:
  *         description: Farm not found
  */
-router.put("/:id/verify", FarmController.verifyFarm)
+router.put("/:id/verify",authenticate, FarmController.verifyFarm)
 
 /**
  * @swagger
@@ -312,6 +313,6 @@ router.put("/:id/verify", FarmController.verifyFarm)
  *       200:
  *         description: List of farmer's farms
  */
-router.get("/farmer/:farmerId", FarmController.getFarmsByFarmer)
+router.get("/farmer/:farmerId",authenticate, FarmController.getFarmsByFarmer)
 
 export default router
