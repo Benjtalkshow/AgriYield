@@ -517,7 +517,7 @@ export class InvestmentService {
 
       // Get individual investor details
       const investors = await Investment.find({ farmId })
-        .populate("investorId", "name email profileImageUrl")
+        .populate<{ investorId: IUser }>("investorId", "name email profileImageUrl")
         .select("investorId amount investmentType roiEarned totalPayouts status")
         .exec()
 
@@ -544,16 +544,19 @@ export class InvestmentService {
         totalPayouts: stats.totalPayouts,
         investorCount: stats.investorCount.length,
         yieldRate,
-        investors: investors.map(inv => ({
-          investorId: inv.investorId._id,
-          investorName: inv.investorId.name,
-          investorEmail: inv.investorId.email,
-          amount: inv.amount,
-          investmentType: inv.investmentType,
-          roiEarned: inv.roiEarned,
-          totalPayouts: inv.totalPayouts,
-          status: inv.status
-        }))
+        investors: investors.map(inv => {
+          const investor = inv.investorId as IUser
+          return {
+            investorId: investor._id,
+            investorName: investor.name,
+            investorEmail: investor.email,
+            amount: inv.amount,
+            investmentType: inv.investmentType,
+            roiEarned: inv.roiEarned,
+            totalPayouts: inv.totalPayouts,
+            status: inv.status
+          }
+        })
       }
     } catch (error) {
       throw new Error(`Failed to get farm investment details: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -567,7 +570,7 @@ export class InvestmentService {
     try {
       // Get all investments for the investor
       const investments = await Investment.find({ investorId })
-        .populate("farmId", "name location farmType totalArea expectedYield status")
+        .populate<{ farmId: IFarm }>("farmId", "name location farmType totalArea expectedYield status")
         .sort({ createdAt: -1 })
         .exec()
 
@@ -590,38 +593,45 @@ export class InvestmentService {
       let totalPayouts = 0
 
       for (const investment of investments) {
-        const farmId = investment.farmId._id.toString()
-        totalAmountInvested += investment.amount
-        totalROI += investment.roiEarned || 0
-        totalPayouts += investment.totalPayouts || 0
+        if (
+          investment.farmId &&
+          typeof investment.farmId === "object" &&
+          "_id" in investment.farmId
+        ) {
+          const farm = investment.farmId as IFarm
+          const farmId = farm._id as string
+          totalAmountInvested += investment.amount
+          totalROI += investment.roiEarned || 0
+          totalPayouts += investment.totalPayouts || 0
 
-        if (!portfolioByFarm.has(farmId)) {
-          portfolioByFarm.set(farmId, {
-            farmId,
-            farmName: investment.farmId.name,
-            farmLocation: investment.farmId.location,
-            farmType: investment.farmId.farmType,
-            totalInvested: 0,
-            totalROI: 0,
-            totalPayouts: 0,
-            investments: []
+          if (!portfolioByFarm.has(farmId)) {
+            portfolioByFarm.set(farmId, {
+              farmId,
+              farmName: farm.name,
+              farmLocation: farm.location,
+              farmType: farm.farmType,
+              totalInvested: 0,
+              totalROI: 0,
+              totalPayouts: 0,
+              investments: []
+            })
+          }
+
+          const farmPortfolio = portfolioByFarm.get(farmId)
+          farmPortfolio.totalInvested += investment.amount
+          farmPortfolio.totalROI += investment.roiEarned || 0
+          farmPortfolio.totalPayouts += investment.totalPayouts || 0
+          farmPortfolio.investments.push({
+            investmentId: investment._id,
+            amount: investment.amount,
+            investmentType: investment.investmentType,
+            status: investment.status,
+            roiEarned: investment.roiEarned,
+            totalPayouts: investment.totalPayouts,
+            investmentDate: investment.investmentDate,
+            maturityDate: investment.maturityDate
           })
         }
-
-        const farmPortfolio = portfolioByFarm.get(farmId)
-        farmPortfolio.totalInvested += investment.amount
-        farmPortfolio.totalROI += investment.roiEarned || 0
-        farmPortfolio.totalPayouts += investment.totalPayouts || 0
-        farmPortfolio.investments.push({
-          investmentId: investment._id,
-          amount: investment.amount,
-          investmentType: investment.investmentType,
-          status: investment.status,
-          roiEarned: investment.roiEarned,
-          totalPayouts: investment.totalPayouts,
-          investmentDate: investment.investmentDate,
-          maturityDate: investment.maturityDate
-        })
       }
 
       // Calculate ROI percentage for each farm
