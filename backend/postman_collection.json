@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "AgriYield Authentication API",
-    "description": "Complete authentication endpoints for AgriYield platform",
+    "name": "AgriYield Complete API",
+    "description": "Complete API collection for AgriYield platform including Authentication, Farms, and Investments",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -14,176 +14,867 @@
       "key": "token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "magicToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "farmId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "farmerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "investmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "investorId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
-        },
-        "description": "Check if the server is running"
-      }
-    },
-    {
-      "name": "Signup - Investor",
-      "event": [
+      "name": "Authentication",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 201) {",
-              "    var jsonData = pm.response.json();",
-              "    pm.collectionVariables.set('token', jsonData.data.token);",
-              "    console.log('Token saved:', jsonData.data.token);",
-              "}"
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the server is running"
+          }
+        },
+        {
+          "name": "Signup - Investor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    console.log('Investor registered. Token saved:', jsonData.data.token);",
+                  "} else {",
+                  "    console.log('Signup failed:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "type": "text/javascript"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"investor@example.com\",\n  \"name\": \"John Investor\",\n  \"role\": \"investor\",\n  \"magicToken\": \"YOUR_MAGIC_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "description": "Register a new investor account using Magic Link authentication"
+          }
+        },
+        {
+          "name": "Signup - Farmer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('farmerId', jsonData.data.user.id);",
+                  "    console.log('Farmer registered. Token saved:', jsonData.data.token);",
+                  "} else {",
+                  "    console.log('Signup failed:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"farmer@example.com\",\n  \"name\": \"Jane Farmer\",\n  \"role\": \"farmer\",\n  \"farmName\": \"Green Valley Farm\",\n  \"farmDescription\": \"Organic vegetable farming\",\n  \"location\": \"Lagos, Nigeria\",\n  \"nin\": \"12345678901\",\n  \"magicToken\": \"YOUR_MAGIC_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "description": "Register a new farmer account with farm details using Magic Link authentication"
+          }
+        },
+        {
+          "name": "Signin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    console.log('Signin successful. Token saved:', jsonData.data.token);",
+                  "} else {",
+                  "    console.log('Signin failed:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"magicToken\": \"YOUR_MAGIC_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signin"]
+            },
+            "description": "Login with Magic Link authentication"
+          }
+        },
+        {
+          "name": "Connect Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletAddress\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f42bE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/connect-wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "connect-wallet"]
+            },
+            "description": "Connect a blockchain wallet to authenticated user account"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Retrieve authenticated user profile information"
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"investor@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"John Investor\",\n  \"role\": \"investor\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/signup",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "signup"]
-        },
-        "description": "Register a new investor account. Token is automatically saved to collection variables."
-      }
+      ]
     },
     {
-      "name": "Signup - Farmer",
-      "event": [
+      "name": "Farms",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 201) {",
-              "    var jsonData = pm.response.json();",
-              "    pm.collectionVariables.set('token', jsonData.data.token);",
-              "    console.log('Token saved:', jsonData.data.token);",
-              "}"
+          "name": "Create Farm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('farmId', jsonData.data._id);",
+                  "    console.log('Farm created. ID saved:', jsonData.data._id);",
+                  "} else {",
+                  "    console.log('Farm creation failed:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "type": "text/javascript"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Green Valley Farm\",\n  \"description\": \"Organic vegetable farming with modern irrigation systems\",\n  \"farmerId\": \"{{farmerId}}\",\n  \"farmType\": \"crop\",\n  \"totalArea\": 50,\n  \"cultivatedArea\": 45,\n  \"irrigationType\": \"irrigated\",\n  \"expectedYield\": 120,\n  \"location\": {\n    \"address\": \"123 Farm Road\",\n    \"coordinates\": {\n      \"latitude\": 6.5244,\n      \"longitude\": 3.3792\n    },\n    \"state\": \"Lagos\",\n    \"country\": \"Nigeria\"\n  },\n  \"crops\": [\n    \"Tomato\",\n    \"Pepper\",\n    \"Lettuce\"\n  ],\n  \"status\": \"active\",\n  \"images\": [],\n  \"documents\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/farms",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms"]
+            },
+            "description": "Create a new farm listing"
+          }
+        },
+        {
+          "name": "Get All Farms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms?page=1&limit=10&status=active",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "farmType",
+                  "value": "crop",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all farms with pagination and filtering"
+          }
+        },
+        {
+          "name": "Search Farms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/search?q=vegetable&state=Lagos",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "vegetable"
+                },
+                {
+                  "key": "state",
+                  "value": "Lagos",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search farms by location, crops, or farm type"
+          }
+        },
+        {
+          "name": "Get Farm by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}"]
+            },
+            "description": "Retrieve detailed information for a specific farm"
+          }
+        },
+        {
+          "name": "Update Farm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Organic vegetable farming with modern irrigation and weather monitoring\",\n  \"cultivatedArea\": 48,\n  \"expectedYield\": 130\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}"]
+            },
+            "description": "Update farm details"
+          }
+        },
+        {
+          "name": "Delete Farm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}"]
+            },
+            "description": "Delete a farm"
+          }
+        },
+        {
+          "name": "Get Farm Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}", "summary"]
+            },
+            "description": "Get farm summary with investment and harvest data"
+          }
+        },
+        {
+          "name": "Verify Farm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}", "verify"]
+            },
+            "description": "Verify a farm (admin only)"
+          }
+        },
+        {
+          "name": "Get Farms by Farmer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/farmer/{{farmerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "farmer", "{{farmerId}}"]
+            },
+            "description": "Get all farms by a specific farmer"
+          }
+        },
+        {
+          "name": "Get Pending Farms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "pending"]
+            },
+            "description": "Get all pending farms (admin only)"
+          }
+        },
+        {
+          "name": "Delist Farm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/farms/{{farmId}}/delist",
+              "host": ["{{baseUrl}}"],
+              "path": ["farms", "{{farmId}}", "delist"]
+            },
+            "description": "Delist a farm (admin only)"
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"farmer@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Jane Farmer\",\n  \"role\": \"farmer\",\n  \"farmDetails\": {\n    \"farmName\": \"Green Valley Farm\",\n    \"location\": \"California, USA\",\n    \"farmSize\": 50,\n    \"cropTypes\": [\"Wheat\", \"Corn\"]\n  }\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/signup",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "signup"]
-        },
-        "description": "Register a new farmer account with farm details. Token is automatically saved."
-      }
+      ]
     },
     {
-      "name": "Signin",
-      "event": [
+      "name": "Investments",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "    var jsonData = pm.response.json();",
-              "    pm.collectionVariables.set('token', jsonData.data.token);",
-              "    console.log('Token saved:', jsonData.data.token);",
-              "}"
+          "name": "Create Investment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('investmentId', jsonData.data._id);",
+                  "    console.log('Investment created. ID saved:', jsonData.data._id);",
+                  "} else {",
+                  "    console.log('Investment creation failed:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "type": "text/javascript"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorId\": \"{{investorId}}\",\n  \"farmId\": \"{{farmId}}\",\n  \"amount\": 500000,\n  \"investmentType\": \"equity\",\n  \"expectedReturn\": 25,\n  \"maturityDate\": \"2025-12-31\",\n  \"payoutSchedule\": \"quarterly\",\n  \"terms\": \"Investment terms and conditions\",\n  \"documents\": [],\n  \"notes\": \"Investment in Green Valley Farm\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments"]
+            },
+            "description": "Create a new investment"
+          }
+        },
+        {
+          "name": "Get All Investments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all investments with filtering"
+          }
+        },
+        {
+          "name": "Get Investment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}"]
+            },
+            "description": "Get specific investment details"
+          }
+        },
+        {
+          "name": "Update Investment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedReturn\": 28,\n  \"payoutSchedule\": \"monthly\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}"]
+            },
+            "description": "Update investment details"
+          }
+        },
+        {
+          "name": "Delete Investment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}"]
+            },
+            "description": "Delete an investment"
+          }
+        },
+        {
+          "name": "Activate Investment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}", "activate"]
+            },
+            "description": "Activate an investment"
+          }
+        },
+        {
+          "name": "Complete Investment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"finalROI\": 26.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}", "complete"]
+            },
+            "description": "Complete an investment with final ROI"
+          }
+        },
+        {
+          "name": "Process Payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payoutAmount\": 125000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}/payout",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}", "payout"]
+            },
+            "description": "Process payout for investment"
+          }
+        },
+        {
+          "name": "Calculate Next Payout Date",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{investmentId}}/calculate-payout",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{investmentId}}", "calculate-payout"]
+            },
+            "description": "Calculate next payout date"
+          }
+        },
+        {
+          "name": "Get Investments by Investor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/investor/{{investorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "investor", "{{investorId}}"]
+            },
+            "description": "Get all investments by investor"
+          }
+        },
+        {
+          "name": "Get Investor Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/investor/{{investorId}}/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "investor", "{{investorId}}", "summary"]
+            },
+            "description": "Get investor investment summary"
+          }
+        },
+        {
+          "name": "Get Investments by Farm",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/farm/{{farmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "farm", "{{farmId}}"]
+            },
+            "description": "Get all investments in a farm"
+          }
+        },
+        {
+          "name": "Get Due Investments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/due-payouts",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "due-payouts"]
+            },
+            "description": "Get investments due for payout"
+          }
+        },
+        {
+          "name": "Claim Yield",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorId\": \"{{investorId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{farmId}}/claim-yield",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{farmId}}", "claim-yield"]
+            },
+            "description": "Claim yield from farm investment"
+          }
+        },
+        {
+          "name": "Confirm Investment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionHash\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f42bE\",\n  \"contractAddress\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f42bE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/investments/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "confirm"]
+            },
+            "description": "Confirm investment payment via blockchain (webhook)"
+          }
+        },
+        {
+          "name": "Get Farm Investment Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/{{farmId}}/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "{{farmId}}", "details"]
+            },
+            "description": "Get detailed investment info for farm"
+          }
+        },
+        {
+          "name": "Get Investor Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/investments/portfolio/{{investorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["investments", "portfolio", "{{investorId}}"]
+            },
+            "description": "Get investor portfolio with aggregated metrics"
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"investor@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/signin",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "signin"]
-        },
-        "description": "Login with existing credentials. Token is automatically saved to collection variables."
-      }
-    },
-    {
-      "name": "Connect Wallet",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"walletAddress\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/connect-wallet",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "connect-wallet"]
-        },
-        "description": "Connect an Ethereum wallet to the authenticated user account. Requires valid JWT token."
-      }
-    },
-    {
-      "name": "Get Profile",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/profile",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "profile"]
-        },
-        "description": "Retrieve the authenticated user's profile information. Requires valid JWT token."
-      }
+      ]
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { InvestmentController } from "../controllers/investment.controller"
+import { authenticate } from "../middleware/auth.middleware"
 
 const router = Router()
 
@@ -77,7 +78,7 @@ const router = Router()
  *       400:
  *         description: Invalid input
  */
-router.post("/", InvestmentController.createInvestment)
+router.post("/", authenticate, InvestmentController.createInvestment)
 
 /**
  * @swagger
@@ -133,7 +134,7 @@ router.post("/", InvestmentController.createInvestment)
  *       200:
  *         description: List of investments
  */
-router.get("/", InvestmentController.getInvestments)
+router.get("/", authenticate, InvestmentController.getInvestments)
 
 /**
  * @swagger
@@ -154,7 +155,7 @@ router.get("/", InvestmentController.getInvestments)
  *       404:
  *         description: Investment not found
  */
-router.get("/:id", InvestmentController.getInvestmentById)
+router.get("/:id", authenticate, InvestmentController.getInvestmentById)
 
 /**
  * @swagger
@@ -181,7 +182,7 @@ router.get("/:id", InvestmentController.getInvestmentById)
  *       404:
  *         description: Investment not found
  */
-router.put("/:id", InvestmentController.updateInvestment)
+router.put("/:id", authenticate, InvestmentController.updateInvestment)
 
 /**
  * @swagger
@@ -202,7 +203,7 @@ router.put("/:id", InvestmentController.updateInvestment)
  *       404:
  *         description: Investment not found
  */
-router.delete("/:id", InvestmentController.deleteInvestment)
+router.delete("/:id", authenticate, InvestmentController.deleteInvestment)
 
 /**
  * @swagger
@@ -223,7 +224,7 @@ router.delete("/:id", InvestmentController.deleteInvestment)
  *       404:
  *         description: Investment not found
  */
-router.put("/:id/activate", InvestmentController.activateInvestment)
+router.put("/:id/activate", authenticate, InvestmentController.activateInvestment)
 
 /**
  * @swagger
@@ -254,7 +255,7 @@ router.put("/:id/activate", InvestmentController.activateInvestment)
  *       404:
  *         description: Investment not found
  */
-router.put("/:id/complete", InvestmentController.completeInvestment)
+router.put("/:id/complete", authenticate, InvestmentController.completeInvestment)
 
 /**
  * @swagger
@@ -287,7 +288,7 @@ router.put("/:id/complete", InvestmentController.completeInvestment)
  *       404:
  *         description: Investment not found
  */
-router.post("/:id/payout", InvestmentController.processPayout)
+router.post("/:id/payout", authenticate, InvestmentController.processPayout)
 
 /**
  * @swagger
@@ -306,7 +307,7 @@ router.post("/:id/payout", InvestmentController.processPayout)
  *       200:
  *         description: Next payout date calculated
  */
-router.post("/:id/calculate-payout", InvestmentController.calculateNextPayoutDate)
+router.post("/:id/calculate-payout", authenticate, InvestmentController.calculateNextPayoutDate)
 
 /**
  * @swagger
@@ -325,7 +326,7 @@ router.post("/:id/calculate-payout", InvestmentController.calculateNextPayoutDat
  *       200:
  *         description: List of investor's investments
  */
-router.get("/investor/:investorId", InvestmentController.getInvestmentsByInvestor)
+router.get("/investor/:investorId", authenticate, InvestmentController.getInvestmentsByInvestor)
 
 /**
  * @swagger
@@ -344,7 +345,7 @@ router.get("/investor/:investorId", InvestmentController.getInvestmentsByInvesto
  *       200:
  *         description: Investment summary
  */
-router.get("/investor/:investorId/summary", InvestmentController.getInvestorSummary)
+router.get("/investor/:investorId/summary", authenticate, InvestmentController.getInvestorSummary)
 
 /**
  * @swagger
@@ -363,7 +364,7 @@ router.get("/investor/:investorId/summary", InvestmentController.getInvestorSumm
  *       200:
  *         description: List of farm's investments
  */
-router.get("/farm/:farmId", InvestmentController.getInvestmentsByFarm)
+router.get("/farm/:farmId", authenticate, InvestmentController.getInvestmentsByFarm)
 
 /**
  * @swagger
@@ -375,7 +376,7 @@ router.get("/farm/:farmId", InvestmentController.getInvestmentsByFarm)
  *       200:
  *         description: List of investments due for payout
  */
-router.get("/due-payouts", InvestmentController.getDueInvestments)
+router.get("/due-payouts", authenticate, InvestmentController.getDueInvestments)
 
 /**
  * @swagger
@@ -412,7 +413,7 @@ router.get("/due-payouts", InvestmentController.getDueInvestments)
  *       400:
  *         description: No active investments found or no yield available
  */
-router.post("/:farmId/claim-yield", InvestmentController.claimYield)
+router.post("/:farmId/claim-yield", authenticate, InvestmentController.claimYield)
 
 /**
  * @swagger
@@ -446,7 +447,7 @@ router.post("/:farmId/claim-yield", InvestmentController.claimYield)
  *       404:
  *         description: Investment not found
  */
-router.post("/confirm", InvestmentController.confirmInvestment)
+router.post("/confirm", authenticate, InvestmentController.confirmInvestment)
 
 /**
  * @swagger
@@ -465,7 +466,7 @@ router.post("/confirm", InvestmentController.confirmInvestment)
  *       200:
  *         description: Detailed investment information for the farm
  */
-router.get("/:farmId/details", InvestmentController.getFarmInvestmentDetails)
+router.get("/:farmId/details", authenticate, InvestmentController.getFarmInvestmentDetails)
 
 /**
  * @swagger
@@ -486,6 +487,6 @@ router.get("/:farmId/details", InvestmentController.getFarmInvestmentDetails)
  *       200:
  *         description: Investor portfolio with aggregated metrics
  */
-router.get("/portfolio/:investorId", InvestmentController.getInvestorPortfolio)
+router.get("/portfolio/:investorId", authenticate, InvestmentController.getInvestorPortfolio)
 
 export default router
