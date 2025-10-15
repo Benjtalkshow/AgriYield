@@ -7,8 +7,8 @@ interface EnvConfig {
     PORT: number
     MONGODB_URI: string
     FRONTEND_URL: string
-    //   JWT_SECRET: string
-    //   JWT_EXPIRY: string
+      JWT_SECRET: string
+      JWT_EXPIRY: string
     //   MAGIC_API_KEY: string
     MAGIC_SECRET_KEY: string
     //   PINATA_API_KEY: string
@@ -18,7 +18,7 @@ interface EnvConfig {
     //   CONTRACT_FARM_REGISTRY: string
     //   CONTRACT_FARM_FUNDING: string
     //   CONTRACT_PROFIT_POOL: string
-}
+} 
 
 const getEnvVariable = (key: string, defaultValue?: string): string => {
     const value = process.env[key]
@@ -35,8 +35,8 @@ export const envConfig: EnvConfig = {
     PORT: parseInt(process.env.PORT || "8000"),
     MONGODB_URI: getEnvVariable("MONGODB_URI"),
     FRONTEND_URL: getEnvVariable("FRONTEND_URL"),
-    //   JWT_SECRET: getEnvVariable("JWT_SECRET"),
-    //   JWT_EXPIRY: process.env.JWT_EXPIRY || "7d",
+      JWT_SECRET: getEnvVariable("JWT_SECRET"),
+      JWT_EXPIRY: process.env.JWT_EXPIRY || "7d",
     //   MAGIC_API_KEY: getEnvVariable("MAGIC_API_KEY"),
     MAGIC_SECRET_KEY: getEnvVariable("MAGIC_SECRET_KEY"),
     //   PINATA_API_KEY: getEnvVariable("PINATA_API_KEY"),

@@ -1,11 +1,11 @@
 import mongoose, { Schema, Document, Model } from "mongoose"
-// import { IUser } from "./User"
+import { IUser } from "./user.model"
 
 export type TransactionType = "investment" | "withdrawal" | "profit_claim"
 export type TransactionStatus = "pending" | "confirmed" | "failed"
 
 export interface ITransaction extends Document {
-//   userId: IUser["_id"]
+  userId: IUser["_id"]
   transactionType: TransactionType
   amount: number
   transactionHash: string
@@ -31,7 +31,7 @@ export interface TransactionModel extends Model<ITransaction> {
 
 const transactionSchema = new Schema<ITransaction>(
   {
-    // userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     transactionType: { type: String, enum: ["investment", "withdrawal", "profit_claim"], required: true, index: true },
     amount: { type: Number, required: true, min: 0 },
     transactionHash: { type: String, required: true, unique: true, index: true, trim: true },
