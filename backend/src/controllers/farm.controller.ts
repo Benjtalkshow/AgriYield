@@ -269,4 +269,54 @@ export class FarmController {
       })
     }
   }
+
+  /**
+   * Get all pending farms (admin function)
+   * GET /api/farms/pending
+   */
+  static async getPendingFarms(req: Request, res: Response): Promise<void> {
+    try {
+      const farms = await FarmService.getPendingFarms()
+
+      res.status(200).json({
+        success: true,
+        data: farms
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get pending farms"
+      })
+    }
+  }
+
+  /**
+   * Delist farm (admin function)
+   * PUT /api/farms/:id/delist
+   */
+  static async delistFarm(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params
+      const farm = await FarmService.delistFarm(id)
+
+      if (!farm) {
+        res.status(404).json({
+          success: false,
+          message: "Farm not found"
+        })
+        return
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Farm delisted successfully",
+        data: farm
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to delist farm"
+      })
+    }
+  }
 }

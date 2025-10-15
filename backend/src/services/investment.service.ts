@@ -395,6 +395,256 @@ export class InvestmentService {
       throw new Error(`Failed to get due investments: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
+
+  /**
+   * Allow investor to claim yield for a specific farm
+   */
+  static async claimYield(farmId: string, investorId: string): Promise<IInvestment[]> {
+    try {
+      // Verify investor has active investments in this farm
+      const investments = await Investment.find({
+        farmId,
+        investorId,
+        status: "active"
+      }).exec()
+
+      if (investments.length === 0) {
+        throw new Error("No active investments found for this farm")
+      }
+
+      // Calculate total yield to claim
+      const totalYield = investments.reduce((sum, investment) => sum + (investment.roiEarned || 0), 0)
+
+      if (totalYield <= 0) {
+        throw new Error("No yield available to claim")
+      }
+
+      // Process payout for each investment
+      const updatedInvestments = []
+      for (const investment of investments) {
+        const payoutAmount = investment.roiEarned || 0
+        if (payoutAmount > 0) {
+          const updated = await Investment.findByIdAndUpdate(
+            investment._id,
+            {
+              $inc: {
+                totalPayouts: payoutAmount,
+                roiEarned: -payoutAmount
+              },
+              lastPayoutDate: new Date(),
+              updatedAt: new Date()
+            },
+            { new: true }
+          ).exec()
+          if (updated) {
+            updatedInvestments.push(updated)
+          }
+        }
+      }
+
+      return updatedInvestments
+    } catch (error) {
+      throw new Error(`Failed to claim yield: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Confirm investment payment (webhook endpoint)
+   */
+  static async confirmInvestment(transactionHash: string): Promise<IInvestment | null> {
+    try {
+      // Find investment by transaction hash
+      const investment = await Investment.findOne({ transactionHash })
+      if (!investment) {
+        throw new Error("Investment not found")
+      }
+
+      // Update investment with confirmation
+      const confirmedInvestment = await Investment.findByIdAndUpdate(
+        investment._id,
+        {
+          status: "active",
+          updatedAt: new Date()
+        },
+        { new: true }
+      ).exec()
+
+      if (confirmedInvestment) {
+        // Update farm investment statistics
+        await FarmService.updateInvestmentStats(investment.farmId.toString())
+      }
+
+      return confirmedInvestment
+    } catch (error) {
+      throw new Error(`Failed to confirm investment: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Get detailed investment information for a specific farm
+   */
+  static async getFarmInvestmentDetails(farmId: string): Promise<any> {
+    try {
+      const farm = await Farm.findById(farmId)
+      if (!farm) {
+        throw new Error("Farm not found")
+      }
+
+      // Get investment statistics
+      const investmentStats = await Investment.aggregate([
+        { $match: { farmId: new (Investment as any).schema.ObjectId(farmId) } },
+        {
+          $group: {
+            _id: "$farmId",
+            totalInvestment: { $sum: "$amount" },
+            totalActiveInvestment: {
+              $sum: {
+                $cond: [{ $eq: ["$status", "active"] }, "$amount", 0]
+              }
+            },
+            totalCompletedInvestment: {
+              $sum: {
+                $cond: [{ $eq: ["$status", "completed"] }, "$amount", 0]
+              }
+            },
+            totalROI: { $sum: "$roiEarned" },
+            totalPayouts: { $sum: "$totalPayouts" },
+            investorCount: { $addToSet: "$investorId" },
+            investments: { $push: "$$ROOT" }
+          }
+        }
+      ])
+
+      // Get individual investor details
+      const investors = await Investment.find({ farmId })
+        .populate("investorId", "name email profileImageUrl")
+        .select("investorId amount investmentType roiEarned totalPayouts status")
+        .exec()
+
+      const stats = investmentStats[0] || {
+        totalInvestment: 0,
+        totalActiveInvestment: 0,
+        totalCompletedInvestment: 0,
+        totalROI: 0,
+        totalPayouts: 0,
+        investorCount: 0,
+        investments: []
+      }
+
+      // Calculate yield rate (total ROI / total investment * 100)
+      const yieldRate = stats.totalInvestment > 0 ? (stats.totalROI / stats.totalInvestment) * 100 : 0
+
+      return {
+        farmId,
+        farmName: farm.name,
+        totalInvestment: stats.totalInvestment,
+        totalActiveInvestment: stats.totalActiveInvestment,
+        totalCompletedInvestment: stats.totalCompletedInvestment,
+        totalROI: stats.totalROI,
+        totalPayouts: stats.totalPayouts,
+        investorCount: stats.investorCount.length,
+        yieldRate,
+        investors: investors.map(inv => ({
+          investorId: inv.investorId._id,
+          investorName: inv.investorId.name,
+          investorEmail: inv.investorId.email,
+          amount: inv.amount,
+          investmentType: inv.investmentType,
+          roiEarned: inv.roiEarned,
+          totalPayouts: inv.totalPayouts,
+          status: inv.status
+        }))
+      }
+    } catch (error) {
+      throw new Error(`Failed to get farm investment details: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Get investor portfolio with aggregated metrics per farm
+   */
+  static async getInvestorPortfolio(investorId: string): Promise<any> {
+    try {
+      // Get all investments for the investor
+      const investments = await Investment.find({ investorId })
+        .populate("farmId", "name location farmType totalArea expectedYield status")
+        .sort({ createdAt: -1 })
+        .exec()
+
+      if (investments.length === 0) {
+        return {
+          investorId,
+          totalInvestments: 0,
+          totalAmountInvested: 0,
+          totalROI: 0,
+          totalPayouts: 0,
+          farmsInvested: 0,
+          portfolio: []
+        }
+      }
+
+      // Aggregate metrics per farm
+      const portfolioByFarm = new Map()
+      let totalAmountInvested = 0
+      let totalROI = 0
+      let totalPayouts = 0
+
+      for (const investment of investments) {
+        const farmId = investment.farmId._id.toString()
+        totalAmountInvested += investment.amount
+        totalROI += investment.roiEarned || 0
+        totalPayouts += investment.totalPayouts || 0
+
+        if (!portfolioByFarm.has(farmId)) {
+          portfolioByFarm.set(farmId, {
+            farmId,
+            farmName: investment.farmId.name,
+            farmLocation: investment.farmId.location,
+            farmType: investment.farmId.farmType,
+            totalInvested: 0,
+            totalROI: 0,
+            totalPayouts: 0,
+            investments: []
+          })
+        }
+
+        const farmPortfolio = portfolioByFarm.get(farmId)
+        farmPortfolio.totalInvested += investment.amount
+        farmPortfolio.totalROI += investment.roiEarned || 0
+        farmPortfolio.totalPayouts += investment.totalPayouts || 0
+        farmPortfolio.investments.push({
+          investmentId: investment._id,
+          amount: investment.amount,
+          investmentType: investment.investmentType,
+          status: investment.status,
+          roiEarned: investment.roiEarned,
+          totalPayouts: investment.totalPayouts,
+          investmentDate: investment.investmentDate,
+          maturityDate: investment.maturityDate
+        })
+      }
+
+      // Calculate ROI percentage for each farm
+      const portfolio = Array.from(portfolioByFarm.values()).map(farm => ({
+        ...farm,
+        roiPercentage: farm.totalInvested > 0 ? (farm.totalROI / farm.totalInvested) * 100 : 0,
+        netReturn: farm.totalROI - farm.totalPayouts
+      }))
+
+      return {
+        investorId,
+        totalInvestments: investments.length,
+        totalAmountInvested,
+        totalROI,
+        totalPayouts,
+        farmsInvested: portfolio.length,
+        overallROIPercentage: totalAmountInvested > 0 ? (totalROI / totalAmountInvested) * 100 : 0,
+        portfolio
+      }
+    } catch (error) {
+      throw new Error(`Failed to get investor portfolio: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
 }
 
 // Import FarmService for internal use

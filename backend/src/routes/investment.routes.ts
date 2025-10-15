@@ -377,4 +377,115 @@ router.get("/farm/:farmId", InvestmentController.getInvestmentsByFarm)
  */
 router.get("/due-payouts", InvestmentController.getDueInvestments)
 
+/**
+ * @swagger
+ * /api/investments/{farmId}/claim-yield:
+ *   post:
+ *     summary: Claim yield for a specific farm (investor only)
+ *     tags: [Investments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Farm ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - investorId
+ *             properties:
+ *               investorId:
+ *                 type: string
+ *                 description: ID of the investor claiming yield
+ *     responses:
+ *       200:
+ *         description: Yield claimed successfully
+ *       401:
+ *         description: Unauthorized - investor ID required
+ *       400:
+ *         description: No active investments found or no yield available
+ */
+router.post("/:farmId/claim-yield", InvestmentController.claimYield)
+
+/**
+ * @swagger
+ * /api/investments/confirm:
+ *   post:
+ *     summary: Confirm investment payment (webhook)
+ *     tags: [Investments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - investmentId
+ *             properties:
+ *               investmentId:
+ *                 type: string
+ *                 description: ID of the investment to confirm
+ *               transactionHash:
+ *                 type: string
+ *                 description: Blockchain transaction hash
+ *               contractAddress:
+ *                 type: string
+ *                 description: Blockchain contract address
+ *     responses:
+ *       200:
+ *         description: Investment confirmed successfully
+ *       400:
+ *         description: Investment ID is required
+ *       404:
+ *         description: Investment not found
+ */
+router.post("/confirm", InvestmentController.confirmInvestment)
+
+/**
+ * @swagger
+ * /api/investments/{farmId}/details:
+ *   get:
+ *     summary: Get detailed investment information for a specific farm
+ *     tags: [Investments]
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Farm ID
+ *     responses:
+ *       200:
+ *         description: Detailed investment information for the farm
+ */
+router.get("/:farmId/details", InvestmentController.getFarmInvestmentDetails)
+
+/**
+ * @swagger
+ * /api/investments/portfolio/{investorId}:
+ *   get:
+ *     summary: Get investor portfolio with aggregated metrics per farm
+ *     tags: [Investments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: investorId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Investor ID
+ *     responses:
+ *       200:
+ *         description: Investor portfolio with aggregated metrics
+ */
+router.get("/portfolio/:investorId", InvestmentController.getInvestorPortfolio)
+
 export default router

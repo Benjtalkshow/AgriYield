@@ -314,4 +314,41 @@ router.put("/:id/verify", FarmController.verifyFarm)
  */
 router.get("/farmer/:farmerId", FarmController.getFarmsByFarmer)
 
+/**
+ * @swagger
+ * /api/farms/pending:
+ *   get:
+ *     summary: Get all pending farms (admin function)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of pending farms
+ */
+router.get("/pending", FarmController.getPendingFarms)
+
+/**
+ * @swagger
+ * /api/farms/{id}/delist:
+ *   put:
+ *     summary: Delist farm (admin function)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Farm ID
+ *     responses:
+ *       200:
+ *         description: Farm delisted successfully
+ *       404:
+ *         description: Farm not found
+ */
+router.put("/:id/delist", FarmController.delistFarm)
+
 export default router
