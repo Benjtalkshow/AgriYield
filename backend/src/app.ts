@@ -1,7 +1,14 @@
 import express from "express"
 import cors from "cors"
 import helmet from "helmet"
+// import { initializeBlockchain } from "./config/blockchain"
+// import { initializeMagic } from "./config/magic"
 
+
+// (async () => {
+//   await initializeBlockchain()
+// })()
+// initializeMagic()
 
 const app = express()
 
@@ -29,7 +36,7 @@ app.use(
 
 
 // Body parsing with size limits
-app.use(express.json({ limit: "1mb" })) 
+app.use(express.json({ limit: "1mb" }))
 app.use(express.urlencoded({ extended: true, limit: "1mb" }))
 
 app.use(
