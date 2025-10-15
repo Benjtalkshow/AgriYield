@@ -4,6 +4,10 @@ import helmet from "helmet"
 // import { initializeBlockchain } from "./config/blockchain"
 // import { initializeMagic } from "./config/magic"
 
+// Import routes
+import farmRoutes from "./routes/farm.routes"
+import investmentRoutes from "./routes/investment.routes"
+
 
 // (async () => {
 //   await initializeBlockchain()
@@ -94,6 +98,10 @@ app.get("/api/health", (req, res) => {
     uptime: process.uptime(),
   })
 })
+
+// API Routes
+app.use("/api/farms", farmRoutes)
+app.use("/api/investments", investmentRoutes)
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Error:", err)
