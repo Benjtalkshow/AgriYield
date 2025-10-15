@@ -370,4 +370,117 @@ export class InvestmentController {
       })
     }
   }
+
+  /**
+   * Claim yield for a specific farm (investor only)
+   * POST /api/investments/:farmId/claim-yield
+   */
+  static async claimYield(req: Request, res: Response): Promise<void> {
+    try {
+      const { farmId } = req.params
+      const investorId = req.body.investorId // Should come from authenticated user
+
+      if (!investorId) {
+        res.status(401).json({
+          success: false,
+          message: "Investor ID is required"
+        })
+        return
+      }
+
+      const updatedInvestments = await InvestmentService.claimYield(farmId, investorId)
+
+      res.status(200).json({
+        success: true,
+        message: "Yield claimed successfully",
+        data: updatedInvestments
+      })
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to claim yield"
+      })
+    }
+  }
+
+  /**
+   * Confirm investment payment (webhook)
+   * POST /api/investments/confirm
+   */
+  static async confirmInvestment(req: Request, res: Response): Promise<void> {
+    try {
+      const { transactionHash } = req.body
+
+      if (!transactionHash) {
+        res.status(400).json({
+          success: false,
+          message: "Transaction hash is required"
+        })
+        return
+      }
+
+      const investment = await InvestmentService.confirmInvestment(transactionHash)
+
+      if (!investment) {
+        res.status(404).json({
+          success: false,
+          message: "Investment not found"
+        })
+        return
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Investment confirmed successfully",
+        data: investment
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to confirm investment"
+      })
+    }
+  }
+
+  /**
+   * Get detailed investment information for a specific farm
+   * GET /api/investments/:farmId/details
+   */
+  static async getFarmInvestmentDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const { farmId } = req.params
+      const details = await InvestmentService.getFarmInvestmentDetails(farmId)
+
+      res.status(200).json({
+        success: true,
+        data: details
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get farm investment details"
+      })
+    }
+  }
+
+  /**
+   * Get investor portfolio with aggregated metrics per farm
+   * GET /api/investments/portfolio/:investorId
+   */
+  static async getInvestorPortfolio(req: Request, res: Response): Promise<void> {
+    try {
+      const { investorId } = req.params
+      const portfolio = await InvestmentService.getInvestorPortfolio(investorId)
+
+      res.status(200).json({
+        success: true,
+        data: portfolio
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to get investor portfolio"
+      })
+    }
+  }
 }
