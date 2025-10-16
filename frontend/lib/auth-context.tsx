@@ -18,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, role: UserRole, password: string) => Promise<void>
-  verifyCode: (code: string) => Promise<void>
+  verifyCode: (code: string) => Promise<User>
   resendCode: () => Promise<void>
   connectWallet: (address: string) => Promise<void>
   signOut: () => void
@@ -52,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPendingRole(null)
     // In production, Magic Labs would send the code
     console.log("[v0] Verification code sent to:", email)
+    // Return a resolved promise to ensure state is set before navigation
+    return Promise.resolve()
   }
 
   const signUp = async (email: string, role: UserRole, password: string) => {
@@ -61,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPendingPassword(password)
     // In production, Magic Labs would send the code
     console.log("[v0] Verification code sent to:", email, "Role:", role)
+    // Return a resolved promise to ensure state is set before navigation
+    return Promise.resolve()
   }
 
   const verifyCode = async (code: string) => {
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingEmail(null)
       setPendingRole(null)
       setPendingPassword(null)
+      return newUser
     } else {
       throw new Error("Invalid verification code")
     }
