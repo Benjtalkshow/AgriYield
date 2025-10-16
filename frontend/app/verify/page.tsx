@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { LoadingScreen } from "@/components/ui/loading-screen"
+import { Mail, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react"
 import Link from "next/link"
 
 export default function VerifyPage() {
@@ -23,7 +24,7 @@ export default function VerifyPage() {
   const [canResend, setCanResend] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete } = useAuth()
+  const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete, pendingRole } = useAuth()
   const router = useRouter()
   const { addToast } = useToast()
 
@@ -50,14 +51,25 @@ export default function VerifyPage() {
     setIsLoading(true)
     setError("")
     try {
-      await verifyCode(code)
+      const verifiedUser = await verifyCode(code)
       setIsVerified(true)
-      addToast("Verification complete — Welcome to AgriYield!", "success")
+      addToast("✓ Verification complete — Welcome to AgriYield!", "success")
 
-      // Show onboarding for new users
-      setTimeout(() => {
-        setShowOnboarding(true)
-      }, 1000)
+      // Check if user has seen onboarding before
+      const hasSeenOnboarding = localStorage.getItem("onboardingComplete")
+      
+      if (!hasSeenOnboarding) {
+        // Show onboarding for new users after a brief delay
+        setTimeout(() => {
+          setShowOnboarding(true)
+        }, 1000)
+      } else {
+        // Skip onboarding and go directly to dashboard
+        setTimeout(() => {
+          const dashboardPath = verifiedUser.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
+          router.push(dashboardPath)
+        }, 1500)
+      }
     } catch (err) {
       setError("Invalid verification code. Please try again.")
       addToast("Invalid verification code", "error")
@@ -89,7 +101,10 @@ export default function VerifyPage() {
 
   const handleOnboardingComplete = () => {
     markOnboardingComplete()
-    const dashboardPath = user?.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
+    localStorage.setItem("onboardingComplete", "true")
+    // Use pendingRole if user role is not available yet, or fall back to user.role
+    const role = user?.role || pendingRole
+    const dashboardPath = role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
     router.push(dashboardPath)
   }
 
@@ -190,8 +205,15 @@ export default function VerifyPage() {
                       </AnimatePresence>
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading || code.length !== 6}>
-                      {isLoading ? "Verifying..." : "Verify Email"}
+                    <Button type="submit" className="w-full gradient-primary" disabled={isLoading || code.length !== 6}>
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Verifying...
+                        </span>
+                      ) : (
+                        "Verify Email"
+                      )}
                     </Button>
                   </form>
 
@@ -231,6 +253,10 @@ export default function VerifyPage() {
           </Card>
         </motion.div>
       </div>
+
+      {isVerified && !showOnboarding && (
+        <LoadingScreen message="Preparing your dashboard..." />
+      )}
 
       <OnboardingWalkthrough
         isOpen={showOnboarding}

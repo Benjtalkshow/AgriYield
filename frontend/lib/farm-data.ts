@@ -1,4 +1,23 @@
-import type { Farm } from "@/../shared/types/farm"
+export interface Farm {
+  id: string
+  name: string
+  farmer: string
+  cropType: string
+  image: string
+  duration: string
+  roi: number
+  location: string
+  city: string
+  state: string
+  fundingGoal: number
+  amountRaised: number
+  fundingProgress: number
+  minInvestment: number
+  description: string
+  coordinates: [number, number]
+  verified: boolean
+  investors: number
+}
 
 export const farms: Farm[] = [
   {

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { ArrowLeft, Mail, Sprout, TrendingUp, Eye, EyeOff, Check, X } from "lucide-react"
+import { ArrowLeft, Mail, Sprout, TrendingUp, Eye, EyeOff, Check, X, Loader2 } from "lucide-react"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -38,6 +38,8 @@ export default function SignUpPage() {
     setIsLoading(true)
     try {
       await signUp(email, role, password)
+      // Small delay to ensure state updates propagate before navigation
+      await new Promise(resolve => setTimeout(resolve, 100))
       router.push("/verify")
     } catch (error) {
       console.error("Sign up error:", error)
@@ -209,8 +211,15 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading || !isPasswordValid}>
-                {isLoading ? "Creating account..." : "Continue"}
+              <Button type="submit" className="w-full gradient-primary" disabled={isLoading || !isPasswordValid}>
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating account...
+                  </span>
+                ) : (
+                  "Continue"
+                )}
               </Button>
             </form>
 
