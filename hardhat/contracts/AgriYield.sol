@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./FarmShares.sol";
 import "./MockUSDT.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
 contract AgriYield is ReentrancyGuard {
@@ -196,4 +196,5 @@ contract AgriYield is ReentrancyGuard {
     function getFarmInfo(uint256 farmId) public view returns (uint256 maxSupply, uint256 totalMinted, string memory uri) {
         (maxSupply, totalMinted, uri) = farmShares.farms(farmId);
     }
+}
 }
