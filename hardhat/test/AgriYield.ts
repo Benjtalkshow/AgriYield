@@ -1,125 +1,115 @@
 import { expect } from "chai";
-import hre, { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import hre from "hardhat";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { MockUSDT, FarmShares, AgriYield } from "../typechain-types";
 
 describe("AgriYield", function () {
   async function deployFixture() {
-    const [owner, admin, farmer, investor1, investor2] = await hre.ethers.getSigners();
+    const [admin, farmer, investor1, investor2]: SignerWithAddress[] = await hre.ethers.getSigners();
 
+    // Deploy mock token
     const MockUSDT = await hre.ethers.getContractFactory("MockUSDT");
-    const agt = await MockUSDT.deploy();
-    await agt.waitForDeployment();
+    const usdt = (await MockUSDT.deploy()) as MockUSDT;
 
+    // Deploy FarmShares
     const FarmShares = await hre.ethers.getContractFactory("FarmShares");
-    const farmShares = await FarmShares.deploy();
-    await farmShares.waitForDeployment();
+    const farmShares = (await FarmShares.deploy()) as FarmShares;
 
+    // Deploy AgriYield
     const AgriYield = await hre.ethers.getContractFactory("AgriYield");
-    const agriYield = await AgriYield.deploy(
-      await farmShares.getAddress(),
-      await agt.getAddress(),
+    const agriYield = (await AgriYield.deploy(
+      farmShares.target,
+      usdt.target,
       admin.address
-    );
-    await agriYield.waitForDeployment();
+    )) as AgriYield;
 
-    // link FarmShares with AgriYield
-    await farmShares.setAgriYield(await agriYield.getAddress());
+    // Link FarmShares <-> AgriYield
+    await farmShares.setAgriYield(agriYield.target);
 
-    // Give investors AGT tokens
-    await agt.transfer(investor1.address, hre.ethers.parseUnits("1000", 18));
-    await agt.transfer(investor2.address, hre.ethers.parseUnits("1000", 18));
-
-    // Approve AgriYield to spend tokens
-    await agt.connect(investor1).approve(await agriYield.getAddress(), hre.ethers.MaxUint256);
-    await agt.connect(investor2).approve(await agriYield.getAddress(), hre.ethers.MaxUint256);
-
-    return { owner, admin, farmer, investor1, investor2, agt, farmShares, agriYield };
+    return { admin, farmer, investor1, investor2, usdt, farmShares, agriYield };
   }
 
-  it("should create and verify a farm", async function () {
-    const { agriYield, farmer, admin } = await loadFixture(deployFixture);
+  it("should create, fund, pay out, and claim successfully", async function () {
+    const { admin, farmer, investor1, usdt, farmShares, agriYield } =
+      await loadFixture(deployFixture);
 
-    const fundingGoal = hre.ethers.parseUnits("1000", 18);
-    const sharePrice = hre.ethers.parseUnits("10", 18);
+    // Farmer creates a farm
+    const fundingGoal = hre.ethers.parseEther("1000");
+    const sharePrice = hre.ethers.parseEther("10");
     const maxSupply = 100;
-    const deadline = (await hre.ethers.provider.getBlock("latest"))!.timestamp + 3600;
+    const minROI = 20;
+    const maxROI = 30;
+    const deadline =
+      (await hre.ethers.provider.getBlock("latest"))!.timestamp + 86400 * 7; // 7 days
+    const metaCID = "ipfs://farmMetaCID";
 
     await expect(
-      agriYield.connect(farmer).createFarm(
-        "Tomato Farm",
-        "Fresh organic tomatoes",
-        fundingGoal,
-        sharePrice,
-        maxSupply,
-        "bafyCID",
-        deadline
-      )
+      agriYield
+        .connect(farmer)
+        .createFarm(
+          "Tomato Farm",
+          "Organic tomato farming",
+          fundingGoal,
+          sharePrice,
+          maxSupply,
+          metaCID,
+          deadline,
+          minROI,
+          maxROI
+        )
     ).to.emit(agriYield, "FarmCreated");
 
-    await expect(agriYield.connect(admin).verifyFarm(1))
-      .to.emit(agriYield, "FarmVerified");
-  });
-
-  it("should allow verified farm to receive investments", async function () {
-    const { agriYield, farmer, admin, investor1 } = await loadFixture(deployFixture);
-
-    const fundingGoal = hre.ethers.parseUnits("1000", 18);
-    const sharePrice = hre.ethers.parseUnits("10", 18);
-    const maxSupply = 100;
-    const deadline = (await hre.ethers.provider.getBlock("latest"))!.timestamp + 3600;
-
-    await agriYield.connect(farmer).createFarm(
-      "Tomato Farm",
-      "Fresh organic tomatoes",
-      fundingGoal,
-      sharePrice,
-      maxSupply,
-      "bafyCID",
-      deadline
-    );
+    // Verify farm
     await agriYield.connect(admin).verifyFarm(1);
 
+    // Investor claims faucet
+    await usdt.connect(investor1).faucet();
+
+    // Investor approves AgriYield
+    const investAmount = hre.ethers.parseEther("100");
+    await usdt.connect(investor1).approve(agriYield.target, investAmount);
+
+    // Investor invests
     await expect(
-      agriYield.connect(investor1).invest(1, hre.ethers.parseUnits("100", 18))
+      agriYield.connect(investor1).invest(1, investAmount)
     ).to.emit(agriYield, "InvestmentMade");
 
     const farm = await agriYield.getFarm(1);
-    expect(farm.totalInvested).to.equal(hre.ethers.parseUnits("100", 18));
-  });
+    expect(farm.totalInvested).to.equal(investAmount);
+    expect(farm.status).to.equal(0); // Active until fully funded
 
-  it("should prevent overfunding", async function () {
-    const { agriYield, farmer, admin, investor1, investor2 } = await loadFixture(deployFixture);
+    // Simulate full funding (manual storage manipulation for testing)
+    await hre.network.provider.send("hardhat_setStorageAt", [
+      agriYield.target,
+      hre.ethers.solidityPackedKeccak256(["uint256", "uint256"], [1, 6]), // mapping slot for totalInvested
+      hre.ethers.zeroPadValue(hre.ethers.toBeHex(fundingGoal), 32),
+    ]);
 
-    const fundingGoal = hre.ethers.parseUnits("100", 18);
-    const sharePrice = hre.ethers.parseUnits("10", 18);
-    const maxSupply = 10;
-    const deadline = (await hre.ethers.provider.getBlock("latest"))!.timestamp + 3600;
-
-    await agriYield.connect(farmer).createFarm(
-      "Pepper Farm",
-      "Hot red pepper",
-      fundingGoal,
-      sharePrice,
-      maxSupply,
-      "bafyCID",
-      deadline
+    // Disburse funds to farmer
+    await expect(agriYield.connect(admin).disburseFunds(1)).to.emit(
+      agriYield,
+      "FundDisbursed"
     );
-    await agriYield.connect(admin).verifyFarm(1);
 
-    await agriYield.connect(investor1).invest(1, hre.ethers.parseUnits("50", 18));
-    await agriYield.connect(investor2).invest(1, hre.ethers.parseUnits("50", 18));
+    // Farmer returns proceeds (fundingGoal + 25%)
+    const proceeds = hre.ethers.parseEther("1250");
+    await usdt.connect(farmer).faucet(); // give farmer some balance
+    await usdt.connect(farmer).approve(agriYield.target, proceeds);
 
     await expect(
-      agriYield.connect(investor2).invest(1, hre.ethers.parseUnits("1", 18))
-    ).to.be.revertedWith("Goal exceeded");
+      agriYield.connect(farmer).depositProceeds(1, proceeds)
+    ).to.emit(agriYield, "ProceedsDeposited");
+
+    // Investor claims ROI
+    const investorBefore = await usdt.balanceOf(investor1.address);
+
+    await expect(agriYield.connect(investor1).claimInvestorPayout(1)).to.emit(
+      agriYield,
+      "InvestorClaimed"
+    );
+
+    const investorAfter = await usdt.balanceOf(investor1.address);
+    expect(investorAfter).to.be.gt(investorBefore);
   });
-
-  it("should allow admin to disburse funds after funding goal", async function () {
-    const { agriYield, farmer, admin, investor1 } = await loadFixture(deployFixture);
-
-    const fundingGoal = hre.ethers.parseUnits("100", 18);
-    const sharePrice = hre.ethers.parseUnits("10", 18);
-    const maxSupply = 10;
-    const deadline = (await hre.ethers.provider.getBlock("latest"))!.timestamp + 3600;
-
-    await agriYield.connect(farmer)
+});

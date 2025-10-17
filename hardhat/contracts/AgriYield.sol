@@ -27,10 +27,12 @@ contract AgriYield is ReentrancyGuard {
         bool verified;
         Status status;
         string metaCID;
-        
+        uint256 minROI;
+        uint256 maxROI; 
     }
 
     mapping(uint256 => Farm) public farms;
+    mapping(uint256 => address[]) public farmInvestors;
     mapping(uint256 => mapping(address => uint256)) public investorShares;
 
     uint256 public farmCounter;
@@ -45,7 +47,7 @@ contract AgriYield is ReentrancyGuard {
     event InvestorClaimed(uint256 indexed farmId, address indexed investor, uint256 amount);
     event FarmClosed(uint256 indexed farmId);   
     event InvestorRefunded(uint256 indexed farmId, address indexed investor, uint256 amount);
-
+    event ProceedsDeposited(uint256 indexed farmId, uint256 amount, uint256 roiPercent);
 
     modifier onlyAdmin() {
             require(msg.sender == admin, "AgriYield: only admin");
@@ -64,21 +66,24 @@ contract AgriYield is ReentrancyGuard {
 
     // FARM CREATION & VERIFICATION
     function createFarm(
-        string memory name;
-        string memory description;
+        string memory name,
+        string memory description,
         uint256 fundingGoal,
         uint256 sharePrice,
         uint256 maxSupply,
         string memory metaCID,
-        uint256 deadline
+        uint256 deadline,
+        uint256 minROI,
+        uint256 maxROI
     ) external {
-        require(fundingGoal > 0 && shareSupply > 0 && sharePrice > 0, "AgriYield: invalid args);
+        require(fundingGoal > 0 && maxSupply > 0 && sharePrice > 0, "AgriYield: invalid args");
         require(fundingGoal == sharePrice * maxSupply, "AgriYield: inconsistent params");
         require(deadline > block.timestamp, "AgriYield: invalid deadline");
-
+                require(minROI < maxROI && maxROI <= 100, "AgriYield: invalid ROI range");
         farmCounter++;
-        farms[farmCounter] = Farm(msg.sender, name, description, farmCounter, fundingGoal, sharePrice, 0, 0, deadline, false, status, metaCID);
-        farmShares.registerFarm(farmCounter, maxSupply, metaCID);
+        uint256 newId = farmCounter;
+        farms[newId] = Farm(msg.sender, name, description, newId, fundingGoal, sharePrice, 0, 0, deadline, false, Status.Active, metaCID, minROI, maxROI);
+        farmShares.registerFarm(newId, maxSupply, metaCID);
         emit FarmCreated(newId, msg.sender);
     }
 
@@ -98,14 +103,19 @@ contract AgriYield is ReentrancyGuard {
         uint256 sharesToMint = amount / farm.sharePrice;
         require(sharesToMint > 0, "Investment too small");
         require(farm.totalInvested + amount <= farm.fundingGoal, "Goal exceeded");
+
         AGT.transferFrom(msg.sender, address(this), amount);
 
         // mint shares for investor
+        
+        if (investorShares[farmId][msg.sender] == 0) {
+            farmInvestors[farmId].push(msg.sender); // record unique investor
+        }
         farmShares.mint(msg.sender, farmId, sharesToMint);
         investorShares[farmId][msg.sender] += sharesToMint;
         farm.totalInvested += amount;
 
-        if (farm.totalInvested == farm.fundingGoal) {
+        if (farm.totalInvested >= farm.fundingGoal) {
             farm.status = Status.Funded;
         }
 
@@ -114,7 +124,7 @@ contract AgriYield is ReentrancyGuard {
 
     // FARMER & INVESTOR FUND FLOWS
     /// @notice Farmer deposits harvest proceeds back into the pool
-    function disburseFunds(uint256 farmId) external nonReentrant, onlyAdmin {
+    function disburseFunds(uint256 farmId) external nonReentrant onlyAdmin {
             Farm storage f = farms[farmId];
             require(f.status == Status.Funded, "AgriYield: not funded");
             require(f.totalInvested > 0, "No funds");
@@ -132,10 +142,19 @@ contract AgriYield is ReentrancyGuard {
         require(f.status == Status.PaidOut, "Farm not paid out yet");
         require(amount > 0, "Invalid amount");
 
-        AGT.transferFrom(msg.sender, address(this), amount);
+        uint256 minExpected = f.fundingGoal + ((f.fundingGoal * f.minROI) / 100);
+        uint256 maxExpected = f.fundingGoal + ((f.fundingGoal * f.maxROI) / 100);
+
+        require(amount >= minExpected && amount <= maxExpected, "AgriYield: ROI out of range");
+
+        AGT.transferFrom(msg.sender,address(this), amount);
         f.proceeds += amount;
         f.status = Status.Settled;
+
+        uint256 actualROI = ((amount - f.fundingGoal) * 100) / f.fundingGoal;
+        emit ProceedsDeposited(farmId, amount, actualROI);
     }
+
     /// @notice Investors claim proportional payout after settlement
     function claimInvestorPayout(uint256 farmId) external nonReentrant {
         Farm storage f = farms[farmId];
@@ -144,29 +163,18 @@ contract AgriYield is ReentrancyGuard {
         uint256 shares = investorShares[farmId][msg.sender];
         require(shares > 0, "AgriYield: No shares to claim");
 
-        (uint256 maxSupplly,,) = getFarmInfo(farmId);
+        (uint256 maxSupply,,) = getFarmInfo(farmId);
         uint256 entitlement = (f.proceeds * shares) / maxSupply;
        
         investorShares[farmId][msg.sender] = 0;
 
         // Burn ERC1155 shares
         farmShares.burnShares(msg.sender, farmId, shares);
-        AGT.transfer(address(this), msg.sender, amount)
-        emit InvevstorClaimed(farmId, msg.sender, entitlement);
+        AGT.transfer(msg.sender, entitlement);
+        emit InvestorClaimed(farmId, msg.sender, entitlement);
 
     }
 
- // DELIST OR CLOSE FARM (after payouts/refunds)
-    function delistFarm(uint256 farmId) external onlyAdmin {
-        Farm storage f = farms[farmId];
-        require(f.status == Status.Settled || f.status == Status.Active, "Cannot delist");
-
-        // If campaign failed (not funded by deadline), refund investors
-        if (f.status == Status.Active && block.timestamp > f.deadline) {
-            _refundInvestors(farmId);
-        }
-
-        f.status = Status.Closed;
     function _refundInvestors(uint256 farmId) internal {
         Farm storage f = farms[farmId];
         require(f.status == Status.Active, "Not refundable");
@@ -190,11 +198,37 @@ contract AgriYield is ReentrancyGuard {
         }
 
     }
+
+ // DELIST OR CLOSE FARM (after payouts/refunds)
+    function delistFarm(uint256 farmId) external onlyAdmin {
+        Farm storage f = farms[farmId];
+        require(f.status == Status.Settled || f.status == Status.Active, "Cannot delist");
+
+        // If campaign failed (not funded by deadline), refund investors
+        if (f.status == Status.Active && block.timestamp > f.deadline) {
+            _refundInvestors(farmId);
+        }
+
+        f.status = Status.Closed;
+        emit FarmClosed(farmId);
+    }
+    
     function getFarm(uint256 farmId) external view returns (Farm memory) {
         return farms[farmId];
     }
     function getFarmInfo(uint256 farmId) public view returns (uint256 maxSupply, uint256 totalMinted, string memory uri) {
         (maxSupply, totalMinted, uri) = farmShares.farms(farmId);
     }
-}
+
+       /// @notice Returns expected ROI range in USDT terms for full funding goal
+    function getExpectedReturns(uint256 farmId)
+        external
+        view
+        returns (uint256 minExpected, uint256 maxExpected)
+    {
+        Farm storage f = farms[farmId];
+        minExpected = f.fundingGoal + ((f.fundingGoal * f.minROI) / 100);
+        maxExpected = f.fundingGoal + ((f.fundingGoal * f.maxROI) / 100);
+    }
+
 }
