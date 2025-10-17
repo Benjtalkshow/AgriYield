@@ -15,7 +15,7 @@ interface IAgriYield {
             address farmer,
             string memory name,
             string memory description,
-            uint256 farmId_, 
+            uint256 farmId_,
             uint256 fundingGoal,
             uint256 sharePrice,
             uint256 totalInvested,
@@ -23,7 +23,7 @@ interface IAgriYield {
             uint256 deadline,
             bool verified,
             uint8 status,
-            string memory metaCID
+            string memory metaCID,
             uint256 minROI,
             uint256 maxROI
         );
@@ -113,11 +113,11 @@ contract Marketplace is ReentrancyGuard {
     event AdminChanged(address indexed newAdmin);
 
     constructor(address _stableToken, address _agriYield, address _admin) {
-        require(_AGT != address(0), "Marketplace: zero token");
+        require(_stableToken != address(0), "Marketplace: zero token");
         require(_agriYield != address(0), "Marketplace: zero agriYield");
         require(_admin != address(0), "Marketplace: zero admin");
 
-        AGT = IERC20(_AGT);
+        AGT = IERC20(_stableToken);
         agriYield = IAgriYield(_agriYield);
         admin = _admin;
     }
@@ -211,10 +211,7 @@ contract Marketplace is ReentrancyGuard {
         uint256 totalPrice = l.price * quantity;
 
         // transfer payment into escrow (this contract)
-        require(
-            AGT.safeTransferFrom(msg.sender, address(this), totalPrice),
-            "Marketplace: transfer failed"
-        );
+        AGT.safeTransferFrom(msg.sender, address(this), totalPrice);
 
         l.quantityRemaining -= quantity;
 

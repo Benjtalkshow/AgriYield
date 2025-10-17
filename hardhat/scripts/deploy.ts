@@ -4,7 +4,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
 
   console.log("🚀 Deploying contracts with account:", deployer.address);
-  const balance = await deployer.getBalance();
+  const balance = await ethers.provider.getBalance(deployer.address);
   console.log("💰 Deployer balance:", ethers.formatEther(balance), "ETH\n");
 
   // 1️⃣ Deploy MockUSDT
@@ -23,18 +23,24 @@ async function main() {
   const farmSharesAddress = await farmShares.getAddress();
   console.log("✅ FarmShares deployed to:", farmSharesAddress);
 
-  // 3️⃣ Deploy AgriYield (requires MockUSDT and FarmShares)
+  // 3️⃣ Deploy AgriYield (requires FarmShares, MockUSDT, and admin)
   console.log("\n📦 Deploying AgriYield...");
   const AgriYield = await ethers.getContractFactory("AgriYield");
-  const agriYield = await AgriYield.deploy(mockUSDTAddress, farmSharesAddress);
+  const agriYield = await AgriYield.deploy(farmSharesAddress, mockUSDTAddress, deployer.address);
   await agriYield.waitForDeployment();
   const agriYieldAddress = await agriYield.getAddress();
   console.log("✅ AgriYield deployed to:", agriYieldAddress);
 
-  // 4️⃣ Deploy Marketplace (requires AgriYield and MockUSDT)
+  // 🔗 Link FarmShares to AgriYield
+  console.log("\n🔗 Linking FarmShares to AgriYield...");
+  const linkTx = await farmShares.setAgriYield(agriYieldAddress);
+  await linkTx.wait();
+  console.log("✅ FarmShares linked to AgriYield");
+
+  // 4️⃣ Deploy Marketplace (requires MockUSDT, AgriYield, and admin)
   console.log("\n📦 Deploying Marketplace...");
   const Marketplace = await ethers.getContractFactory("Marketplace");
-  const marketplace = await Marketplace.deploy(agriYieldAddress, mockUSDTAddress);
+  const marketplace = await Marketplace.deploy(mockUSDTAddress, agriYieldAddress, deployer.address);
   await marketplace.waitForDeployment();
   const marketplaceAddress = await marketplace.getAddress();
   console.log("✅ Marketplace deployed to:", marketplaceAddress);
