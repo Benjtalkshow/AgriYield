@@ -23,7 +23,7 @@ export default function VerifyPage() {
   const [canResend, setCanResend] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete } = useAuth()
+  // const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete } = useAuth()
   const router = useRouter()
   const { addToast } = useToast()
 
@@ -36,21 +36,21 @@ export default function VerifyPage() {
     }
   }, [countdown])
 
-  useEffect(() => {
-    if (!pendingEmail && !user) {
-      router.push("/signin")
-    }
-    if (user?.isVerified) {
-      router.push(user.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor")
-    }
-  }, [pendingEmail, user, router])
+  // useEffect(() => {
+  //   if (!pendingEmail && !user) {
+  //     router.push("/signin")
+  //   }
+  //   if (user?.isVerified) {
+  //     router.push(user.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor")
+  //   }
+  // }, [pendingEmail, user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
     try {
-      await verifyCode(code)
+      // await verifyCode(code)
       setIsVerified(true)
       addToast("Verification complete — Welcome to AgriYield!", "success")
 
@@ -71,27 +71,27 @@ export default function VerifyPage() {
     setCode(value)
   }
 
-  const handleResend = useCallback(async () => {
-    if (!canResend) return
-    try {
-      await resendCode()
-      setCountdown(90)
-      setCanResend(false)
-      addToast("Verification code resent successfully", "success")
-    } catch (err) {
-      addToast("Failed to resend code. Please try again.", "error")
-    }
-  }, [canResend, resendCode, addToast])
+  // const handleResend = useCallback(async () => {
+  //   if (!canResend) return
+  //   try {
+  //     await resendCode()
+  //     setCountdown(90)
+  //     setCanResend(false)
+  //     addToast("Verification code resent successfully", "success")
+  //   } catch (err) {
+  //     addToast("Failed to resend code. Please try again.", "error")
+  //   }
+  // }, [canResend, resendCode, addToast])
 
   const handleChangeEmail = () => {
     router.push("/signup")
   }
 
-  const handleOnboardingComplete = () => {
-    markOnboardingComplete()
-    const dashboardPath = user?.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
-    router.push(dashboardPath)
-  }
+  // const handleOnboardingComplete = () => {
+  //   markOnboardingComplete()
+  //   const dashboardPath = user?.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
+  //   router.push(dashboardPath)
+  // }
 
   return (
     <>
@@ -154,7 +154,7 @@ export default function VerifyPage() {
                   <>
                     We sent a 6-digit verification code to
                     <br />
-                    <span className="font-medium text-foreground">{pendingEmail}</span>
+                    {/* <span className="font-medium text-foreground">{pendingEmail}</span> */}
                   </>
                 )}
               </CardDescription>
@@ -208,7 +208,7 @@ export default function VerifyPage() {
                         <p className="text-muted-foreground">
                           Didn't receive the code?{" "}
                           <button
-                            onClick={handleResend}
+                            onClick={() => alert("clicked")}
                             className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
                           >
                             Resend
@@ -235,7 +235,7 @@ export default function VerifyPage() {
       <OnboardingWalkthrough
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={handleOnboardingComplete}
+        onComplete={() => null}
       />
     </>
   )

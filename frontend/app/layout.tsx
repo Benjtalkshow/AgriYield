@@ -4,6 +4,7 @@ import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ToastProvider } from "@/components/ui/toast"
+import { AuthCallback } from "@/lib/auth-callback"
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -20,7 +21,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "AgriYield | Decentralized Agriculture Marketplace",
   description: "Connecting farmers and investors through blockchain-powered transparency.",
-  generator: 'v0.app',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
@@ -38,7 +38,10 @@ export default function RootLayout({
       <body className="font-sans bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ToastProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+            <AuthCallback/>
+              {children}
+              </AuthProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>

@@ -5,8 +5,16 @@ import { Footer } from "@/components/footer"
 import { InvestorDashboardContent } from "@/components/investor/dashboard-content"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { motion } from "framer-motion"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
 
 export default function InvestorDashboardPage() {
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = () => {
+    signOut()
+  }
   return (
     <ProtectedRoute requiredRole="investor">
       <motion.div
@@ -17,6 +25,10 @@ export default function InvestorDashboardPage() {
       >
         <Navigation />
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Button variant="ghost" onClick={handleSignOut} className="gap-2 hover:cursor-pointer">
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
           <InvestorDashboardContent />
         </main>
         <Footer />

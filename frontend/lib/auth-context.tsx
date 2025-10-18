@@ -1,119 +1,258 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 
-type UserRole = "farmer" | "investor" | null
+type UserRole = "farmer" | "investor" | "admin" | null
 
 interface User {
+  id: string
   email: string
+  name: string
   role: UserRole
-  isVerified: boolean
-  walletConnected: boolean
+  verified: boolean
+  kycStatus: string
   walletAddress?: string
-  hasSeenOnboarding?: boolean
+  farmName?: string
+  farmDescription?: string
+  location?: string
+  profileImageUrl?: string
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, role: UserRole, password: string) => Promise<void>
-  verifyCode: (code: string) => Promise<void>
-  resendCode: () => Promise<void>
-  connectWallet: (address: string) => Promise<void>
+  signIn: (email: string) => Promise<void>
+  signUp: (email: string, name: string, role: UserRole, farmDetails?: FarmDetails) => Promise<void>
+  handleMagicLinkCallback: () => Promise<void>
   signOut: () => void
-  markOnboardingComplete: () => void
   pendingEmail: string | null
   pendingRole: UserRole
+  isVerifying: boolean
+  emailSent: boolean
+}
+
+interface FarmDetails {
+  farmName: string
+  farmDescription: string
+  location: string
+  nin?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+let magic: any = null
+
+const initializeMagic = async () => {
+  if (typeof window === "undefined") return null
+  if (magic) return magic
+
+  try {
+    const { Magic } = await import("magic-sdk")
+    const magicKey = process.env.NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY
+    if (!magicKey) {
+      console.error("❌ Magic publishable key not found")
+      return null
+    }
+
+    magic = new Magic(magicKey, {
+      network: {
+        rpcUrl: process.env.NEXT_PUBLIC_RPC_URL!,
+        chainId: Number.parseInt(process.env.NEXT_PUBLIC_CHAIN_ID!),
+      },
+    })
+    return magic
+  } catch (error) {
+    console.error("❌ Failed to initialize Magic:", error)
+    return null
+  }
+}
+
+const setCookie = (name: string, value: string, days = 7) => {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString()
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; secure; samesite=strict`
+}
+
+const getCookie = (name: string) => {
+  const cookies = document.cookie.split("; ").reduce((acc: Record<string, string>, cookie) => {
+    const [key, val] = cookie.split("=")
+    acc[key] = decodeURIComponent(val)
+    return acc
+  }, {})
+  return cookies[name]
+}
+
+const deleteCookie = (name: string) => {
+  document.cookie = `${name}=; Max-Age=0; path=/; secure; samesite=strict`
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isVerifying, setIsVerifying] = useState(false)
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [pendingRole, setPendingRole] = useState<UserRole>(null)
-  const [pendingPassword, setPendingPassword] = useState<string | null>(null)
+  const [pendingName, setPendingName] = useState<string | null>(null)
+  const [pendingFarmDetails, setPendingFarmDetails] = useState<FarmDetails | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
+  const router = useRouter()
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
   useEffect(() => {
-    // Check for existing session in localStorage
-    const storedUser = localStorage.getItem("agriyield_user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setIsLoading(false)
-  }, [])
+    const restoreSession = async () => {
+      try {
+        const magicInstance = await initializeMagic()
+        const isLoggedIn = localStorage.getItem("agriyield_isLoggedIn") === "true"
+        const token = getCookie("agriyield_token")
 
-  const signIn = async (email: string, password: string) => {
-    // Mock Magic Labs sign in - send verification code
-    setPendingEmail(email)
-    setPendingPassword(password)
-    setPendingRole(null)
-    // In production, Magic Labs would send the code
-    console.log("[v0] Verification code sent to:", email)
-  }
+        if (isLoggedIn && token && magicInstance) {
+          const isMagicLoggedIn = await magicInstance.user.isLoggedIn()
 
-  const signUp = async (email: string, role: UserRole, password: string) => {
-    // Mock Magic Labs sign up - send verification code
-    setPendingEmail(email)
-    setPendingRole(role)
-    setPendingPassword(password)
-    // In production, Magic Labs would send the code
-    console.log("[v0] Verification code sent to:", email, "Role:", role)
-  }
+          if (isMagicLoggedIn) {
+            const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
 
-  const verifyCode = async (code: string) => {
-    // Mock verification - in production, verify with Magic Labs
-    if (code.length === 6 && pendingEmail) {
-      const newUser: User = {
-        email: pendingEmail,
-        role: pendingRole,
-        isVerified: true,
-        walletConnected: false,
-        hasSeenOnboarding: false,
+            if (response.ok) {
+              const data = await response.json()
+              setUser(data.data.user)
+              await new Promise((resolve) => setTimeout(resolve, 0))
+              setIsLoading(false)
+              return
+            } else {
+              localStorage.removeItem("agriyield_isLoggedIn")
+              deleteCookie("agriyield_token")
+            }
+          } else {
+            localStorage.removeItem("agriyield_isLoggedIn")
+            deleteCookie("agriyield_token")
+          }
+        }
+      } catch {
+        localStorage.removeItem("agriyield_isLoggedIn")
+        deleteCookie("agriyield_token")
       }
-      setUser(newUser)
-      localStorage.setItem("agriyield_user", JSON.stringify(newUser))
+
+      setIsLoading(false)
+    }
+
+    restoreSession()
+  }, [API_BASE_URL])
+
+  const signIn = async (email: string) => {
+    try {
+      const magicInstance = await initializeMagic()
+      if (!magicInstance) throw new Error("Magic SDK not initialized")
+
+      await magicInstance.auth.loginWithMagicLink({ email })
+
+      setPendingEmail(email)
+      setPendingRole(null)
+      setPendingName(null)
+      setPendingFarmDetails(null)
+      setEmailSent(true)
+    } catch (error) {
+      console.error("Sign in error:", error)
+      throw error instanceof Error ? error : new Error("Failed to send magic link")
+    }
+  }
+
+  const signUp = async (email: string, name: string, role: UserRole, farmDetails?: FarmDetails) => {
+    try {
+      const magicInstance = await initializeMagic()
+      if (!magicInstance) throw new Error("Magic SDK not initialized")
+
+      await magicInstance.auth.loginWithMagicLink({ email })
+
+      setPendingEmail(email)
+      setPendingRole(role)
+      setPendingName(name)
+      if (farmDetails) setPendingFarmDetails(farmDetails)
+      setEmailSent(true)
+    } catch (error) {
+      console.error("Sign up error:", error)
+      throw error instanceof Error ? error : new Error("Failed to send magic link")
+    }
+  }
+
+  const handleMagicLinkCallback = async () => {
+    try {
+      setIsVerifying(true)
+      const magicInstance = await initializeMagic()
+      if (!magicInstance) throw new Error("Magic SDK not initialized")
+
+      const isLoggedIn = await magicInstance.user.isLoggedIn()
+      if (!isLoggedIn) return
+
+      const didToken = await magicInstance.user.getIdToken()
+      const isSignUp = pendingRole !== null && pendingName !== null
+
+      const requestBody: any = { magicToken: didToken, email: pendingEmail }
+      if (isSignUp) {
+        requestBody.name = pendingName
+        requestBody.role = pendingRole
+        if (pendingRole === "farmer" && pendingFarmDetails) {
+          Object.assign(requestBody, pendingFarmDetails)
+        }
+      }
+
+      const endpoint = isSignUp ? "/auth/signup" : "/auth/signin"
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${didToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || "Verification failed")
+
+      const userData = data.data.user
+      const token = data.data.token
+
+      setUser(userData)
+      setCookie("agriyield_token", token)
+      localStorage.setItem("agriyield_isLoggedIn", "true")
+
       setPendingEmail(null)
       setPendingRole(null)
-      setPendingPassword(null)
-    } else {
-      throw new Error("Invalid verification code")
+      setPendingName(null)
+      setPendingFarmDetails(null)
+      setEmailSent(false)
+
+      const dashboardMap: Record<string, string> = {
+        farmer: "/dashboard/farmer",
+        investor: "/dashboard/investor",
+        admin: "/dashboard/admin",
+      }
+
+      router.push(dashboardMap[userData.role] || "/dashboard/investor")
+    } catch (error) {
+      console.error("Magic link callback error:", error)
+      throw error
+    } finally {
+      setIsVerifying(false)
     }
   }
 
-  const resendCode = async () => {
-    if (pendingEmail) {
-      // Mock resending code - in production, call Magic Labs API
-      console.log("[v0] Verification code resent to:", pendingEmail)
-      return Promise.resolve()
+  const signOut = async () => {
+    try {
+      const magicInstance = await initializeMagic()
+      if (magicInstance) await magicInstance.user.logout()
+    } catch (error) {
+      console.error("Logout error:", error)
     }
-    return Promise.reject(new Error("No pending email"))
-  }
 
-  const connectWallet = async (address: string) => {
-    if (user) {
-      const updatedUser = { ...user, walletConnected: true, walletAddress: address }
-      setUser(updatedUser)
-      localStorage.setItem("agriyield_user", JSON.stringify(updatedUser))
-    }
-  }
-
-  const markOnboardingComplete = () => {
-    if (user) {
-      const updatedUser = { ...user, hasSeenOnboarding: true }
-      setUser(updatedUser)
-      localStorage.setItem("agriyield_user", JSON.stringify(updatedUser))
-    }
-  }
-
-  const signOut = () => {
     setUser(null)
-    localStorage.removeItem("agriyield_user")
-    setPendingEmail(null)
-    setPendingRole(null)
-    setPendingPassword(null)
+    deleteCookie("agriyield_token")
+    localStorage.removeItem("agriyield_isLoggedIn")
+
+    router.push("/signin")
   }
 
   return (
@@ -123,13 +262,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         signIn,
         signUp,
-        verifyCode,
-        resendCode,
-        connectWallet,
+        handleMagicLinkCallback,
         signOut,
-        markOnboardingComplete,
         pendingEmail,
         pendingRole,
+        isVerifying,
+        emailSent,
       }}
     >
       {children}
@@ -139,8 +277,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider")
   return context
 }
