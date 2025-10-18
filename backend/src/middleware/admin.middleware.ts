@@ -13,7 +13,8 @@ export const authorize = (req: AuthRequest, res: Response, next: NextFunction): 
       throw new AppError("Authentication required", 401)
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "investor") {
+      console.error("======================================", req.user.role, "======================================");
       throw new AppError("Admin access required", 403)
     }
 

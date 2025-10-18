@@ -5,8 +5,8 @@ import { initializeMagic } from "./config/magic"
 import farmRoutes from "./routes/farm.routes"
 import investmentRoutes from "./routes/investment.routes"
 import authRoutes from "./routes/auth.routes"
+import adminRoutes from "./routes/admin.routes"
 import { setupSwagger } from "./config/swagger"
-import { AppError } from "./utils/appError"
 import { errorHandler } from "./middleware/errorHandler.middleware"
 
 initializeMagic()
@@ -98,6 +98,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/farms", farmRoutes)
 app.use("/api/investments", investmentRoutes)
 app.use("/api/auth", authRoutes)
+app.use("/api/admin", adminRoutes)
 
 setupSwagger(app)
 
