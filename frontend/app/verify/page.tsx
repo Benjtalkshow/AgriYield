@@ -24,7 +24,7 @@ export default function VerifyPage() {
   const [canResend, setCanResend] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete, pendingRole } = useAuth()
+  // const { verifyCode, pendingEmail, user, resendCode, markOnboardingComplete } = useAuth()
   const router = useRouter()
   const { addToast } = useToast()
 
@@ -37,76 +37,73 @@ export default function VerifyPage() {
     }
   }, [countdown])
 
-  useEffect(() => {
-    if (!pendingEmail && !user) {
-      router.push("/signin")
-    }
-    if (user?.isVerified) {
-      router.push(user.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor")
-    }
-  }, [pendingEmail, user, router])
+  // useEffect(() => {
+  //   if (!pendingEmail && !user) {
+  //     router.push("/signin")
+  //   }
+  //   if (user?.isVerified) {
+  //     router.push(user.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor")
+  //   }
+  // }, [pendingEmail, user, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-    try {
-      const verifiedUser = await verifyCode(code)
-      setIsVerified(true)
-      addToast("✓ Verification complete — Welcome to AgriYield!", "success")
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   setIsLoading(true)
+  //   setError("")
+  //   try {
+  //     // await verifyCode(code)
+  //     setIsVerified(true)
+  //     addToast("✓ Verification complete — Welcome to AgriYield!", "success")
 
-      // Check if user has seen onboarding before
-      const hasSeenOnboarding = localStorage.getItem("onboardingComplete")
-      
-      if (!hasSeenOnboarding) {
-        // Show onboarding for new users after a brief delay
-        setTimeout(() => {
-          setShowOnboarding(true)
-        }, 1000)
-      } else {
-        // Skip onboarding and go directly to dashboard
-        setTimeout(() => {
-          const dashboardPath = verifiedUser.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
-          router.push(dashboardPath)
-        }, 1500)
-      }
-    } catch (err) {
-      setError("Invalid verification code. Please try again.")
-      addToast("Invalid verification code", "error")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  //     // Check if user has seen onboarding before
+  //     const hasSeenOnboarding = localStorage.getItem("onboardingComplete")
+
+  //     if (!hasSeenOnboarding) {
+  //       // Show onboarding for new users after a brief delay
+  //       setTimeout(() => {
+  //         setShowOnboarding(true)
+  //       }, 1000)
+  //     } else {
+  //       // Skip onboarding and go directly to dashboard
+  //       setTimeout(() => {
+  //         const dashboardPath = verifiedUser.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
+  //         router.push(dashboardPath)
+  //       }, 1500)
+  //     }
+  //   } catch (err) {
+  //     setError("Invalid verification code. Please try again.")
+  //     addToast("Invalid verification code", "error")
+  //   } finally {
+  //     setIsLoading(false)
+  //   }
+  // }
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6)
     setCode(value)
   }
 
-  const handleResend = useCallback(async () => {
-    if (!canResend) return
-    try {
-      await resendCode()
-      setCountdown(90)
-      setCanResend(false)
-      addToast("Verification code resent successfully", "success")
-    } catch (err) {
-      addToast("Failed to resend code. Please try again.", "error")
-    }
-  }, [canResend, resendCode, addToast])
+  // const handleResend = useCallback(async () => {
+  //   if (!canResend) return
+  //   try {
+  //     await resendCode()
+  //     setCountdown(90)
+  //     setCanResend(false)
+  //     addToast("Verification code resent successfully", "success")
+  //   } catch (err) {
+  //     addToast("Failed to resend code. Please try again.", "error")
+  //   }
+  // }, [canResend, resendCode, addToast])
 
   const handleChangeEmail = () => {
     router.push("/signup")
   }
 
-  const handleOnboardingComplete = () => {
-    markOnboardingComplete()
-    localStorage.setItem("onboardingComplete", "true")
-    // Use pendingRole if user role is not available yet, or fall back to user.role
-    const role = user?.role || pendingRole
-    const dashboardPath = role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
-    router.push(dashboardPath)
-  }
+  // const handleOnboardingComplete = () => {
+  //   markOnboardingComplete()
+  //   const dashboardPath = user?.role === "farmer" ? "/dashboard/farmer" : "/dashboard/investor"
+  //   router.push(dashboardPath)
+  // }
 
   return (
     <>
@@ -169,7 +166,7 @@ export default function VerifyPage() {
                   <>
                     We sent a 6-digit verification code to
                     <br />
-                    <span className="font-medium text-foreground">{pendingEmail}</span>
+                    {/* <span className="font-medium text-foreground">{pendingEmail}</span> */}
                   </>
                 )}
               </CardDescription>
@@ -177,7 +174,7 @@ export default function VerifyPage() {
             <CardContent>
               {!isVerified && (
                 <>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={() => null} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Verification Code</Label>
                       <Input
@@ -230,7 +227,7 @@ export default function VerifyPage() {
                         <p className="text-muted-foreground">
                           Didn't receive the code?{" "}
                           <button
-                            onClick={handleResend}
+                            onClick={() => alert("clicked")}
                             className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
                           >
                             Resend
@@ -261,7 +258,7 @@ export default function VerifyPage() {
       <OnboardingWalkthrough
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={handleOnboardingComplete}
+        onComplete={() => null}
       />
     </>
   )
