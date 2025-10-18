@@ -1,6 +1,8 @@
 import { Router } from "express"
 import { InvestmentController } from "../controllers/investment.controller"
 import { authenticate } from "../middleware/auth.middleware"
+import { validate } from "../middleware/validation.middleware"
+import { completeInvestmentSchema, confirmInvestmentSchema, createInvestmentSchema, processPayoutSchema } from "../validators/investment.validator"
 
 const router = Router()
 
@@ -78,7 +80,7 @@ const router = Router()
  *       400:
  *         description: Invalid input
  */
-router.post("/", authenticate, InvestmentController.createInvestment)
+router.post("/", authenticate, validate(createInvestmentSchema), InvestmentController.createInvestment)
 
 /**
  * @swagger
@@ -182,7 +184,7 @@ router.get("/:id", authenticate, InvestmentController.getInvestmentById)
  *       404:
  *         description: Investment not found
  */
-router.put("/:id", authenticate, InvestmentController.updateInvestment)
+router.put("/:id", authenticate, validate(createInvestmentSchema.partial()), InvestmentController.updateInvestment)
 
 /**
  * @swagger
@@ -255,7 +257,7 @@ router.put("/:id/activate", authenticate, InvestmentController.activateInvestmen
  *       404:
  *         description: Investment not found
  */
-router.put("/:id/complete", authenticate, InvestmentController.completeInvestment)
+router.put("/:id/complete", authenticate, validate(completeInvestmentSchema), InvestmentController.completeInvestment)
 
 /**
  * @swagger
@@ -288,7 +290,7 @@ router.put("/:id/complete", authenticate, InvestmentController.completeInvestmen
  *       404:
  *         description: Investment not found
  */
-router.post("/:id/payout", authenticate, InvestmentController.processPayout)
+router.post("/:id/payout", authenticate, validate(processPayoutSchema), InvestmentController.processPayout)
 
 /**
  * @swagger
@@ -447,7 +449,7 @@ router.post("/:farmId/claim-yield", authenticate, InvestmentController.claimYiel
  *       404:
  *         description: Investment not found
  */
-router.post("/confirm", authenticate, InvestmentController.confirmInvestment)
+router.post("/confirm", authenticate, validate(confirmInvestmentSchema), InvestmentController.confirmInvestment)
 
 /**
  * @swagger
