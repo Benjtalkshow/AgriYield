@@ -50,7 +50,7 @@ Each farm project or cultivation season is represented as an on-chain asset, all
 |--------|-------------|
 | **Frontend** | Next.js, React, Tailwind CSS |
 | **Backend** | Node.js, Express.js, TypeScript, MongoDB |
-| **Blockchain** | Solidity, Hardhat (Polygon/Base) |
+| **Blockchain** | Solidity, Hardhat (Lisk) |
 | **Authentication** | Magic Labs (passwordless email / wallet) |
 | **Storage** | IPFS (via NFT.storage / Pinata) |
 | **Wallets** | MetaMask, WalletConnect |
