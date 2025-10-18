@@ -277,26 +277,26 @@ router.delete("/:id",authenticate, FarmController.deleteFarm)
  */
 router.get("/:id/summary",authenticate, FarmController.getFarmSummary)
 
-/**
- * @swagger
- * /api/farms/{id}/verify:
- *   put:
- *     summary: Verify farm (admin only)
- *     tags: [Farms]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Farm ID
- *     responses:
- *       200:
- *         description: Farm verified successfully
- *       404:
- *         description: Farm not found
- */
-router.put("/:id/verify",authenticate, FarmController.verifyFarm)
+// /**
+//  * @swagger
+//  * /api/farms/{id}/verify:
+//  *   put:
+//  *     summary: Verify farm (admin only)
+//  *     tags: [Farms]
+//  *     parameters:
+//  *       - in: path
+//  *         name: id
+//  *         required: true
+//  *         schema:
+//  *           type: string
+//  *         description: Farm ID
+//  *     responses:
+//  *       200:
+//  *         description: Farm verified successfully
+//  *       404:
+//  *         description: Farm not found
+//  */
+// // router.put("/:id/verify",authenticate, authorize, FarmController.verifyFarm)
 
 /**
  * @swagger
@@ -317,41 +317,41 @@ router.put("/:id/verify",authenticate, FarmController.verifyFarm)
  */
 router.get("/farmer/:farmerId",authenticate, FarmController.getFarmsByFarmer)
 
-/**
- * @swagger
- * /api/farms/pending:
- *   get:
- *     summary: Get all pending farms (admin function)
- *     tags: [Farms]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of pending farms
- */
-router.get("/pending", authenticate, FarmController.getPendingFarms)
+// /**
+//  * @swagger
+//  * /api/farms/pending:
+//  *   get:
+//  *     summary: Get all pending farms (admin function)
+//  *     tags: [Farms]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     responses:
+//  *       200:
+//  *         description: List of pending farms
+//  */
+// // router.get("/pending", authenticate, authorize, FarmController.getPendingFarms)
 
-/**
- * @swagger
- * /api/farms/{id}/delist:
- *   put:
- *     summary: Delist farm (admin function)
- *     tags: [Farms]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Farm ID
- *     responses:
- *       200:
- *         description: Farm delisted successfully
- *       404:
- *         description: Farm not found
- */
-router.put("/:id/delist", authenticate, FarmController.delistFarm)
+// /**
+//  * @swagger
+//  * /api/farms/{id}/delist:
+//  *   put:
+//  *     summary: Delist farm (admin function)
+//  *     tags: [Farms]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     parameters:
+//  *       - in: path
+//  *         name: id
+//  *         required: true
+//  *         schema:
+//  *           type: string
+//  *         description: Farm ID
+//  *     responses:
+//  *       200:
+//  *         description: Farm delisted successfully
+//  *       404:
+//  *         description: Farm not found
+//  */
+// // router.put("/:id/delist", authorize, authenticate, FarmController.delistFarm)
 
 export default router
