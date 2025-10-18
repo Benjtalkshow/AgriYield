@@ -1,12 +1,13 @@
-import { Request, Response } from "express"
+import { Request, Response, NextFunction } from "express"
 import { FarmService, CreateFarmData } from "../services/farm.service"
+import { AppError } from "../utils/appError"
 
 export class FarmController {
   /**
    * Create a new farm
    * POST /api/farms
    */
-  static async createFarm(req: Request, res: Response): Promise<void> {
+  static async createFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const farmData: CreateFarmData = req.body
       const farm = await FarmService.createFarm(farmData)
@@ -17,10 +18,7 @@ export class FarmController {
         data: farm
       })
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to create farm"
-      })
+      next(error)
     }
   }
 
@@ -28,17 +26,13 @@ export class FarmController {
    * Get farm by ID
    * GET /api/farms/:id
    */
-  static async getFarmById(req: Request, res: Response): Promise<void> {
+  static async getFarmById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const farm = await FarmService.getFarmById(id)
 
       if (!farm) {
-        res.status(404).json({
-          success: false,
-          message: "Farm not found"
-        })
-        return
+        throw new AppError("Farm not found", 404)
       }
 
       res.status(200).json({
@@ -46,10 +40,7 @@ export class FarmController {
         data: farm
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get farm"
-      })
+      next(error)
     }
   }
 
@@ -57,17 +48,9 @@ export class FarmController {
    * Get all farms with optional filtering
    * GET /api/farms
    */
-  static async getFarms(req: Request, res: Response): Promise<void> {
+  static async getFarms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const {
-        status,
-        farmType,
-        state,
-        isVerified,
-        farmerId,
-        page = "1",
-        limit = "10"
-      } = req.query
+      const { status, farmType, state, isVerified, farmerId, page = "1", limit = "10" } = req.query
 
       const filters = {
         status: typeof status === "string" ? status : undefined,
@@ -93,10 +76,7 @@ export class FarmController {
         }
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get farms"
-      })
+      next(error)
     }
   }
 
@@ -104,7 +84,7 @@ export class FarmController {
    * Update farm by ID
    * PUT /api/farms/:id
    */
-  static async updateFarm(req: Request, res: Response): Promise<void> {
+  static async updateFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const updateData = req.body
@@ -112,11 +92,7 @@ export class FarmController {
       const farm = await FarmService.updateFarm(id, updateData)
 
       if (!farm) {
-        res.status(404).json({
-          success: false,
-          message: "Farm not found"
-        })
-        return
+        throw new AppError("Farm not found", 404)
       }
 
       res.status(200).json({
@@ -125,10 +101,7 @@ export class FarmController {
         data: farm
       })
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to update farm"
-      })
+      next(error)
     }
   }
 
@@ -136,17 +109,13 @@ export class FarmController {
    * Delete farm by ID
    * DELETE /api/farms/:id
    */
-  static async deleteFarm(req: Request, res: Response): Promise<void> {
+  static async deleteFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const deleted = await FarmService.deleteFarm(id)
 
       if (!deleted) {
-        res.status(404).json({
-          success: false,
-          message: "Farm not found"
-        })
-        return
+        throw new AppError("Farm not found", 404)
       }
 
       res.status(200).json({
@@ -154,10 +123,7 @@ export class FarmController {
         message: "Farm deleted successfully"
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to delete farm"
-      })
+      next(error)
     }
   }
 
@@ -165,20 +131,21 @@ export class FarmController {
    * Get farm summary with investment and harvest data
    * GET /api/farms/:id/summary
    */
-  static async getFarmSummary(req: Request, res: Response): Promise<void> {
+  static async getFarmSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const summary = await FarmService.getFarmSummary(id)
+
+      if (!summary) {
+        throw new AppError("Farm summary not found", 404)
+      }
 
       res.status(200).json({
         success: true,
         data: summary
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get farm summary"
-      })
+      next(error)
     }
   }
 
@@ -186,17 +153,13 @@ export class FarmController {
    * Verify farm (admin only)
    * PUT /api/farms/:id/verify
    */
-  static async verifyFarm(req: Request, res: Response): Promise<void> {
+  static async verifyFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const farm = await FarmService.verifyFarm(id)
 
       if (!farm) {
-        res.status(404).json({
-          success: false,
-          message: "Farm not found"
-        })
-        return
+        throw new AppError("Farm not found", 404)
       }
 
       res.status(200).json({
@@ -205,10 +168,7 @@ export class FarmController {
         data: farm
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to verify farm"
-      })
+      next(error)
     }
   }
 
@@ -216,7 +176,7 @@ export class FarmController {
    * Get farms by farmer ID
    * GET /api/farms/farmer/:farmerId
    */
-  static async getFarmsByFarmer(req: Request, res: Response): Promise<void> {
+  static async getFarmsByFarmer(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { farmerId } = req.params
       const farms = await FarmService.getFarmsByFarmer(farmerId)
@@ -226,10 +186,7 @@ export class FarmController {
         data: farms
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get farms by farmer"
-      })
+      next(error)
     }
   }
 
@@ -237,16 +194,12 @@ export class FarmController {
    * Search farms
    * GET /api/farms/search
    */
-  static async searchFarms(req: Request, res: Response): Promise<void> {
+  static async searchFarms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { q, farmType, state, minArea, maxArea } = req.query
 
       if (!q || typeof q !== "string") {
-        res.status(400).json({
-          success: false,
-          message: "Search query is required"
-        })
-        return
+        throw new AppError("Search query is required", 400)
       }
 
       const filters = {
@@ -263,10 +216,7 @@ export class FarmController {
         data: farms
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to search farms"
-      })
+      next(error)
     }
   }
 
@@ -274,7 +224,7 @@ export class FarmController {
    * Get all pending farms (admin function)
    * GET /api/farms/pending
    */
-  static async getPendingFarms(req: Request, res: Response): Promise<void> {
+  static async getPendingFarms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const farms = await FarmService.getPendingFarms()
 
@@ -283,10 +233,7 @@ export class FarmController {
         data: farms
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get pending farms"
-      })
+      next(error)
     }
   }
 
@@ -294,17 +241,13 @@ export class FarmController {
    * Delist farm (admin function)
    * PUT /api/farms/:id/delist
    */
-  static async delistFarm(req: Request, res: Response): Promise<void> {
+  static async delistFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const farm = await FarmService.delistFarm(id)
 
       if (!farm) {
-        res.status(404).json({
-          success: false,
-          message: "Farm not found"
-        })
-        return
+        throw new AppError("Farm not found", 404)
       }
 
       res.status(200).json({
@@ -313,10 +256,7 @@ export class FarmController {
         data: farm
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to delist farm"
-      })
+      next(error)
     }
   }
 }

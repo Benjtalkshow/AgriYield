@@ -1,26 +1,19 @@
 import express from "express"
 import cors from "cors"
 import helmet from "helmet"
-// import { initializeBlockchain } from "./config/blockchain"
 import { initializeMagic } from "./config/magic"
-
-
-// Import routes
 import farmRoutes from "./routes/farm.routes"
 import investmentRoutes from "./routes/investment.routes"
 import authRoutes from "./routes/auth.routes"
 import { setupSwagger } from "./config/swagger"
+import { AppError } from "./utils/appError"
+import { errorHandler } from "./middleware/errorHandler.middleware"
 
-
-
-// (async () => {
-//   await initializeBlockchain()
-// })()
 initializeMagic()
 
 const app = express()
 
-app.set('trust proxy', 1)
+app.set("trust proxy", 1)
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -36,27 +29,24 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
-  }),
+  })
 )
 
-
-
-
-
-// Body parsing with size limits
+// Body parsing
 app.use(express.json({ limit: "1mb" }))
 app.use(express.urlencoded({ extended: true, limit: "1mb" }))
 
+// CORS
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 )
 
-// Request logging middleware (sanitized)
+// Request logger
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString()
   const method = req.method
@@ -74,8 +64,7 @@ app.use((req, res, next) => {
       "token",
       "apiKey",
       "secret",
-      "token",
-      "magicToken"
+      "magicToken",
     ]
     sensitiveFields.forEach((field) => {
       if (logBody[field]) logBody[field] = "[REDACTED]"
@@ -87,16 +76,16 @@ app.use((req, res, next) => {
   next()
 })
 
-const securityHeaders = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+// Security headers
+app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff")
   res.setHeader("X-Frame-Options", "DENY")
   res.setHeader("X-XSS-Protection", "1; mode=block")
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin")
   next()
-}
+})
 
-app.use(securityHeaders)
-
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
@@ -105,28 +94,20 @@ app.get("/api/health", (req, res) => {
   })
 })
 
-// API Routes
+// Routes
 app.use("/api/farms", farmRoutes)
 app.use("/api/investments", investmentRoutes)
 app.use("/api/auth", authRoutes)
 
 setupSwagger(app)
 
+// Handle undefined routes
+app.all(/.*/, (req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error("Error:", err)
-
-  const isDevelopment = process.env.NODE_ENV === "development"
-
-  res.status(err.status || 500).json({
-    error: isDevelopment ? err.message : "Internal server error",
-    ...(isDevelopment && { stack: err.stack }),
-  })
-})
-
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" })
-})
+// Global error handler
+app.use(errorHandler)
 
 export default app

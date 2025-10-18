@@ -1,12 +1,13 @@
-import { Request, Response } from "express"
+import { Request, Response, NextFunction } from "express"
 import { InvestmentService, CreateInvestmentData } from "../services/investment.service"
+import { AppError } from "../utils/appError"
 
 export class InvestmentController {
   /**
    * Create a new investment
    * POST /api/investments
    */
-  static async createInvestment(req: Request, res: Response): Promise<void> {
+  static async createInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const investmentData: CreateInvestmentData = req.body
       const investment = await InvestmentService.createInvestment(investmentData)
@@ -17,10 +18,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to create investment"
-      })
+      next(error)
     }
   }
 
@@ -28,17 +26,13 @@ export class InvestmentController {
    * Get investment by ID
    * GET /api/investments/:id
    */
-  static async getInvestmentById(req: Request, res: Response): Promise<void> {
+  static async getInvestmentById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const investment = await InvestmentService.getInvestmentById(id)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -46,10 +40,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investment"
-      })
+      next(error)
     }
   }
 
@@ -57,7 +48,7 @@ export class InvestmentController {
    * Get all investments with optional filtering
    * GET /api/investments
    */
-  static async getInvestments(req: Request, res: Response): Promise<void> {
+  static async getInvestments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const {
         status,
@@ -95,10 +86,7 @@ export class InvestmentController {
         }
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investments"
-      })
+      next(error)
     }
   }
 
@@ -106,19 +94,14 @@ export class InvestmentController {
    * Update investment by ID
    * PUT /api/investments/:id
    */
-  static async updateInvestment(req: Request, res: Response): Promise<void> {
+  static async updateInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const updateData = req.body
-
       const investment = await InvestmentService.updateInvestment(id, updateData)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -127,10 +110,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to update investment"
-      })
+      next(error)
     }
   }
 
@@ -138,17 +118,13 @@ export class InvestmentController {
    * Delete investment by ID
    * DELETE /api/investments/:id
    */
-  static async deleteInvestment(req: Request, res: Response): Promise<void> {
+  static async deleteInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const deleted = await InvestmentService.deleteInvestment(id)
 
       if (!deleted) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -156,10 +132,7 @@ export class InvestmentController {
         message: "Investment deleted successfully"
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to delete investment"
-      })
+      next(error)
     }
   }
 
@@ -167,17 +140,13 @@ export class InvestmentController {
    * Activate investment
    * PUT /api/investments/:id/activate
    */
-  static async activateInvestment(req: Request, res: Response): Promise<void> {
+  static async activateInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const investment = await InvestmentService.activateInvestment(id)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -186,10 +155,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to activate investment"
-      })
+      next(error)
     }
   }
 
@@ -197,7 +163,7 @@ export class InvestmentController {
    * Complete investment
    * PUT /api/investments/:id/complete
    */
-  static async completeInvestment(req: Request, res: Response): Promise<void> {
+  static async completeInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const { finalROI } = req.body
@@ -205,11 +171,7 @@ export class InvestmentController {
       const investment = await InvestmentService.completeInvestment(id, finalROI)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -218,10 +180,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to complete investment"
-      })
+      next(error)
     }
   }
 
@@ -229,7 +188,7 @@ export class InvestmentController {
    * Get investor summary
    * GET /api/investments/investor/:investorId/summary
    */
-  static async getInvestorSummary(req: Request, res: Response): Promise<void> {
+  static async getInvestorSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { investorId } = req.params
       const summary = await InvestmentService.getInvestorSummary(investorId)
@@ -239,10 +198,7 @@ export class InvestmentController {
         data: summary
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investor summary"
-      })
+      next(error)
     }
   }
 
@@ -250,7 +206,7 @@ export class InvestmentController {
    * Get investments by investor ID
    * GET /api/investments/investor/:investorId
    */
-  static async getInvestmentsByInvestor(req: Request, res: Response): Promise<void> {
+  static async getInvestmentsByInvestor(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { investorId } = req.params
       const investments = await InvestmentService.getInvestmentsByInvestor(investorId)
@@ -260,10 +216,7 @@ export class InvestmentController {
         data: investments
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investments by investor"
-      })
+      next(error)
     }
   }
 
@@ -271,7 +224,7 @@ export class InvestmentController {
    * Get investments by farm ID
    * GET /api/investments/farm/:farmId
    */
-  static async getInvestmentsByFarm(req: Request, res: Response): Promise<void> {
+  static async getInvestmentsByFarm(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { farmId } = req.params
       const investments = await InvestmentService.getInvestmentsByFarm(farmId)
@@ -281,10 +234,7 @@ export class InvestmentController {
         data: investments
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investments by farm"
-      })
+      next(error)
     }
   }
 
@@ -292,27 +242,19 @@ export class InvestmentController {
    * Process payout for investment
    * POST /api/investments/:id/payout
    */
-  static async processPayout(req: Request, res: Response): Promise<void> {
+  static async processPayout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const { payoutAmount } = req.body
 
       if (!payoutAmount || payoutAmount <= 0) {
-        res.status(400).json({
-          success: false,
-          message: "Valid payout amount is required"
-        })
-        return
+        throw new AppError("Valid payout amount is required", 400)
       }
 
       const investment = await InvestmentService.processPayout(id, payoutAmount)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -321,10 +263,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to process payout"
-      })
+      next(error)
     }
   }
 
@@ -332,22 +271,17 @@ export class InvestmentController {
    * Calculate next payout date
    * POST /api/investments/:id/calculate-payout
    */
-  static async calculateNextPayoutDate(req: Request, res: Response): Promise<void> {
+  static async calculateNextPayoutDate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params
       const nextPayoutDate = await InvestmentService.calculateNextPayoutDate(id)
 
       res.status(200).json({
         success: true,
-        data: {
-          nextPayoutDate
-        }
+        data: { nextPayoutDate }
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to calculate next payout date"
-      })
+      next(error)
     }
   }
 
@@ -355,7 +289,7 @@ export class InvestmentController {
    * Get due investments for payout processing
    * GET /api/investments/due-payouts
    */
-  static async getDueInvestments(req: Request, res: Response): Promise<void> {
+  static async getDueInvestments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const investments = await InvestmentService.getDueInvestments()
 
@@ -364,10 +298,7 @@ export class InvestmentController {
         data: investments
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get due investments"
-      })
+      next(error)
     }
   }
 
@@ -375,17 +306,13 @@ export class InvestmentController {
    * Claim yield for a specific farm (investor only)
    * POST /api/investments/:farmId/claim-yield
    */
-  static async claimYield(req: Request, res: Response): Promise<void> {
+  static async claimYield(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { farmId } = req.params
-      const investorId = req.body.investorId // Should come from authenticated user
+      const investorId = req.body.investorId // Ideally comes from auth middleware
 
       if (!investorId) {
-        res.status(401).json({
-          success: false,
-          message: "Investor ID is required"
-        })
-        return
+        throw new AppError("Investor ID is required", 401)
       }
 
       const updatedInvestments = await InvestmentService.claimYield(farmId, investorId)
@@ -396,37 +323,26 @@ export class InvestmentController {
         data: updatedInvestments
       })
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to claim yield"
-      })
+      next(error)
     }
   }
 
   /**
-   * Confirm investment payment (webhook)
+   * Confirm investment (webhook)
    * POST /api/investments/confirm
    */
-  static async confirmInvestment(req: Request, res: Response): Promise<void> {
+  static async confirmInvestment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { transactionHash } = req.body
 
       if (!transactionHash) {
-        res.status(400).json({
-          success: false,
-          message: "Transaction hash is required"
-        })
-        return
+        throw new AppError("Transaction hash is required", 400)
       }
 
       const investment = await InvestmentService.confirmInvestment(transactionHash)
 
       if (!investment) {
-        res.status(404).json({
-          success: false,
-          message: "Investment not found"
-        })
-        return
+        throw new AppError("Investment not found", 404)
       }
 
       res.status(200).json({
@@ -435,10 +351,7 @@ export class InvestmentController {
         data: investment
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to confirm investment"
-      })
+      next(error)
     }
   }
 
@@ -446,7 +359,7 @@ export class InvestmentController {
    * Get detailed investment information for a specific farm
    * GET /api/investments/:farmId/details
    */
-  static async getFarmInvestmentDetails(req: Request, res: Response): Promise<void> {
+  static async getFarmInvestmentDetails(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { farmId } = req.params
       const details = await InvestmentService.getFarmInvestmentDetails(farmId)
@@ -456,10 +369,7 @@ export class InvestmentController {
         data: details
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get farm investment details"
-      })
+      next(error)
     }
   }
 
@@ -467,7 +377,7 @@ export class InvestmentController {
    * Get investor portfolio with aggregated metrics per farm
    * GET /api/investments/portfolio/:investorId
    */
-  static async getInvestorPortfolio(req: Request, res: Response): Promise<void> {
+  static async getInvestorPortfolio(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { investorId } = req.params
       const portfolio = await InvestmentService.getInvestorPortfolio(investorId)
@@ -477,10 +387,7 @@ export class InvestmentController {
         data: portfolio
       })
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : "Failed to get investor portfolio"
-      })
+      next(error)
     }
   }
 }
