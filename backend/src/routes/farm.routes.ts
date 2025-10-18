@@ -1,6 +1,8 @@
 import { Router } from "express"
 import { FarmController } from "../controllers/farm.controller"
 import { authenticate } from "../middleware/auth.middleware"
+import { validate } from "../middleware/validation.middleware"
+import { createFarmSchema, updateFarmSchema } from "../validators/farm.validator"
 
 const router = Router()
 
@@ -95,7 +97,7 @@ const router = Router()
  *       400:
  *         description: Invalid input
  */
-router.post("/", authenticate, FarmController.createFarm)
+router.post("/", authenticate, validate(createFarmSchema), FarmController.createFarm)
 
 /**
  * @swagger
@@ -233,7 +235,7 @@ router.get("/:id",authenticate, FarmController.getFarmById)
  *       404:
  *         description: Farm not found
  */
-router.put("/:id",authenticate, FarmController.updateFarm)
+router.put("/:id",authenticate, validate(updateFarmSchema), FarmController.updateFarm)
 
 /**
  * @swagger
