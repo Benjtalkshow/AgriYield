@@ -51,7 +51,7 @@ const initializeMagic = async () => {
     const { Magic } = await import("magic-sdk")
     const magicKey = process.env.NEXT_PUBLIC_MAGIC_PUBLISHABLE_KEY
     if (!magicKey) {
-      console.error("❌ Magic publishable key not found")
+      console.error("Magic publishable key not found")
       return null
     }
 
@@ -63,7 +63,7 @@ const initializeMagic = async () => {
     })
     return magic
   } catch (error) {
-    console.error("❌ Failed to initialize Magic:", error)
+    console.error("Failed to initialize Magic:", error)
     return null
   }
 }
