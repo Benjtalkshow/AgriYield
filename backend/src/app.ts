@@ -5,14 +5,20 @@ import { initializeMagic } from "./config/magic"
 import farmRoutes from "./routes/farm.routes"
 import investmentRoutes from "./routes/investment.routes"
 import authRoutes from "./routes/auth.routes"
+import adminRoutes from "./routes/admin.routes"
 import { setupSwagger } from "./config/swagger"
-import { AppError } from "./utils/appError"
 import { errorHandler } from "./middleware/errorHandler.middleware"
+import { initializeBlockchainService } from "./services/blockchain.services"
+import { testBlockchainConnection } from "./config/blockchain.config"
 
 initializeMagic()
+const app = express();
 
-const app = express()
 
+(async () => {
+  initializeBlockchainService()
+  await testBlockchainConnection()
+})()
 app.set("trust proxy", 1)
 app.use(
   helmet({
@@ -98,6 +104,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/farms", farmRoutes)
 app.use("/api/investments", investmentRoutes)
 app.use("/api/auth", authRoutes)
+app.use("/api/admin", adminRoutes)
 
 setupSwagger(app)
 
