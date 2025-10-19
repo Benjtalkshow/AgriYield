@@ -8,11 +8,17 @@ import authRoutes from "./routes/auth.routes"
 import adminRoutes from "./routes/admin.routes"
 import { setupSwagger } from "./config/swagger"
 import { errorHandler } from "./middleware/errorHandler.middleware"
+import { initializeBlockchainService } from "./services/blockchain.services"
+import { testBlockchainConnection } from "./config/blockchain.config"
 
 initializeMagic()
+const app = express();
 
-const app = express()
 
+(async () => {
+  initializeBlockchainService()
+  await testBlockchainConnection()
+})()
 app.set("trust proxy", 1)
 app.use(
   helmet({

@@ -301,36 +301,4 @@ export class FarmService {
       throw new Error(`Failed to search farms: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
-
-  /**
-   * Get all pending farms (admin function)
-   */
-  static async getPendingFarms(): Promise<IFarm[]> {
-    try {
-      return await Farm.find({ status: "pending" })
-        .populate("farmerId", "name email profileImageUrl")
-        .sort({ createdAt: -1 })
-        .exec()
-    } catch (error) {
-      throw new Error(`Failed to get pending farms: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  }
-
-  /**
-   * Delist farm (admin function)
-   */
-  static async delistFarm(farmId: string): Promise<IFarm | null> {
-    try {
-      return await Farm.findByIdAndUpdate(
-        farmId,
-        {
-          status: "delisted",
-          updatedAt: new Date()
-        },
-        { new: true }
-      ).exec()
-    } catch (error) {
-      throw new Error(`Failed to delist farm: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  }
 }

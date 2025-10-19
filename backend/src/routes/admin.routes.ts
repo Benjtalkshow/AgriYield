@@ -44,32 +44,32 @@ router.use(authenticate, authorize)
  */
 router.get("/farms", AdminController.getFarms)
 
-/**
- * @swagger
- * /admin/farms/pending:
- *   get:
- *     summary: Get all pending farms awaiting verification
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *     responses:
- *       200:
- *         description: List of pending farms
- *       403:
- *         description: Forbidden - Admin access required
- */
-router.get("/farms/pending", FarmController.getPendingFarms)
+// /**
+//  * @swagger
+//  * /admin/farms/pending:
+//  *   get:
+//  *     summary: Get all pending farms awaiting verification
+//  *     tags: [Admin]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     parameters:
+//  *       - in: query
+//  *         name: page
+//  *         schema:
+//  *           type: integer
+//  *           default: 1
+//  *       - in: query
+//  *         name: limit
+//  *         schema:
+//  *           type: integer
+//  *           default: 10
+//  *     responses:
+//  *       200:
+//  *         description: List of pending farms
+//  *       403:
+//  *         description: Forbidden - Admin access required
+//  */
+// router.get("/farms/pending", FarmController.getPendingFarms)
 
 /**
  * @swagger
@@ -222,42 +222,42 @@ router.post("/verify-farm/:farmId", AdminController.verifyFarm)
  */
 router.post("/approve-harvest/:harvestId", AdminController.approveHarvest)
 
-/**
- * @swagger
- * /admin/farms/{farmId}/delist:
- *   put:
- *     summary: Delist a farm from the platform
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: farmId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               reason:
- *                 type: string
- *               notes:
- *                 type: string
- *     responses:
- *       200:
- *         description: Farm delisted successfully
- *       400:
- *         description: Invalid request
- *       403:
- *         description: Forbidden - Admin access required
- *       404:
- *         description: Farm not found
- */
-router.put("/farms/:farmId/delist", FarmController.delistFarm)
+// /**
+//  * @swagger
+//  * /admin/farms/{farmId}/delist:
+//  *   put:
+//  *     summary: Delist a farm from the platform
+//  *     tags: [Admin]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     parameters:
+//  *       - in: path
+//  *         name: farmId
+//  *         required: true
+//  *         schema:
+//  *           type: string
+//  *     requestBody:
+//  *       required: true
+//  *       content:
+//  *         application/json:
+//  *           schema:
+//  *             type: object
+//  *             properties:
+//  *               reason:
+//  *                 type: string
+//  *               notes:
+//  *                 type: string
+//  *     responses:
+//  *       200:
+//  *         description: Farm delisted successfully
+//  *       400:
+//  *         description: Invalid request
+//  *       403:
+//  *         description: Forbidden - Admin access required
+//  *       404:
+//  *         description: Farm not found
+//  */
+// router.put("/farms/:farmId/delist", FarmController.delistFarm)
 
 /**
  * @swagger

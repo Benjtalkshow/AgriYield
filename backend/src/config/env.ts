@@ -1,5 +1,3 @@
-
-
 import dotenv from "dotenv"
 
 dotenv.config()
@@ -11,16 +9,20 @@ export const envConfig = {
   JWT_EXPIRY: process.env.JWT_EXPIRY || "7d",
   MAGIC_SECRET_KEY: process.env.MAGIC_SECRET_KEY || "",
   NODE_ENV: process.env.NODE_ENV || "development",
-  //   PINATA_API_KEY: string
-  //   PINATA_API_SECRET: string
-  //   CONTRACT_FARM_REGISTRY: string
-  //   CONTRACT_FARM_FUNDING: string
-  //   CONTRACT_PROFIT_POOL: string
-  //   MAGIC_API_KEY: string
-
+  LISK_RPC_URL: process.env.LISK_RPC_URL, 
+  PRIVATE_KEY: process.env.PRIVATE_KEY,
+  AGRYIELD_CONTRACT_ADDRESS: process.env.AGRYIELD_CONTRACT_ADDRESS
 }
 
-const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET", "MAGIC_SECRET_KEY"]
+const requiredEnvVars = [
+  "MONGODB_URI", 
+  "JWT_SECRET", 
+  "MAGIC_SECRET_KEY",
+  "LISK_RPC_URL",
+  "PRIVATE_KEY",
+  "AGRYIELD_CONTRACT_ADDRESS"
+]
+
 const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key])
 
 if (missingEnvVars.length > 0) {
