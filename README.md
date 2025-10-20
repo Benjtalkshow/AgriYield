@@ -41,3 +41,23 @@ Using **smart contracts**, AgriYield ensures accountability at every stage — f
 |-----------|----------------|-------------|
 | **FarmRegistry** | `createFarm()` / `verifyFarm()` | Farmers register new listings; admins verify them for public investment. |
 | **FarmFunding** | `invest(farmId, amount)` / `disburseFunds(farmId)` | Handles investor funding, token minting, and milestone disbursements. |
+
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+Make sure you have the following installed:
+- [Node.js](https://nodejs.org/en/download/) (v18+)
+- [pnpm](https://pnpm.io/installation)
+- [MongoDB](https://www.mongodb.com/atlas)
+- [Git](https://git-scm.com/)
+
+---
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/agriyeld.git
+cd AgriYield
+pnpm install
