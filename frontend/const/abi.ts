@@ -510,7 +510,7 @@ export const MARKETPLACE_CONTRACT_ABI = [
   },
 ] as const ; 
 
-export const AGRIYIELD_CONTRACt_ABI = [
+export const AGRIYIELD_CONTRACT_ABI = [
   {
     inputs: [
       { internalType: "address", name: "_farmShares", type: "address" },
@@ -882,7 +882,7 @@ export const AGRIYIELD_CONTRACt_ABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
-] as const ; 
+] as const; ; 
 
 export const MOCKUSDT_CONTRACT_ABI = [
   { inputs: [], stateMutability: "nonpayable", type: "constructor" },

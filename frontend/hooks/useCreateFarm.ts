@@ -1,4 +1,4 @@
-import { AGRIYIELD_CONTRACt_ABI } from "@/const/abi";
+import { AGRIYIELD_CONTRACT_ABI } from "@/const/abi";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import {
@@ -105,7 +105,7 @@ export const useCreateFarm = () => {
         // Create farm transaction
         createFarmHash = await writeContractAsync({
           address: contractAddress as `0x${string}`,
-          abi: AGRIYIELD_CONTRACt_ABI,
+          abi: AGRIYIELD_CONTRACT_ABI,
           functionName: "createFarm",
           args: [
             farmData.name,
