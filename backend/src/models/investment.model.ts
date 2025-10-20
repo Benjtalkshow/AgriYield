@@ -6,25 +6,26 @@ export type InvestmentType = "equity" | "debt" | "tokenized"
 export interface IInvestment extends Document {
   investorId: mongoose.Types.ObjectId
   farmId: mongoose.Types.ObjectId
-  amount: number // investment amount in Naira
+  amount: number
   investmentType: InvestmentType
   status: InvestmentStatus
-  expectedReturn?: number // expected percentage return
-  actualReturn?: number // actual return received
+  expectedReturn?: number
+  actualReturn?: number
   investmentDate: Date
   maturityDate?: Date
   payoutSchedule?: "monthly" | "quarterly" | "annually" | "end_of_season"
-  tokenAmount?: number // for tokenized investments
-  tokenSymbol?: string // e.g., "FARM001"
-  contractAddress?: string // blockchain contract address for tokenized investments
-  transactionHash?: string // blockchain transaction hash
-  roiEarned: number // total ROI earned so far
-  totalPayouts: number // total amount paid out to investor
+  tokenAmount?: number
+  tokenSymbol?: string
+  contractAddress?: string
+  transactionHash?: string
+  roiEarned: number
+  totalPayouts: number
   lastPayoutDate?: Date
   nextPayoutDate?: Date
-  terms?: string // investment terms and conditions
-  documents: string[] // array of document URLs
+  terms?: string
+  documents: string[]
   notes?: string
+  shares: number
   createdAt: Date
   updatedAt: Date
 }
@@ -36,7 +37,7 @@ const investmentSchema = new Schema<IInvestment>(
     amount: { type: Number, required: true, min: 0 },
     investmentType: { type: String, enum: ["equity", "debt", "tokenized"], required: true, index: true },
     status: { type: String, enum: ["pending", "active", "completed", "cancelled", "failed"], default: "pending", index: true },
-    expectedReturn: { type: Number, min: 0, max: 100 }, // percentage
+    expectedReturn: { type: Number, min: 0, max: 100 },
     actualReturn: { type: Number, min: 0 },
     investmentDate: { type: Date, required: true, default: Date.now },
     maturityDate: { type: Date },
@@ -51,12 +52,13 @@ const investmentSchema = new Schema<IInvestment>(
     nextPayoutDate: { type: Date },
     terms: { type: String, trim: true, maxlength: 2000 },
     documents: [{ type: String, trim: true }],
-    notes: { type: String, trim: true, maxlength: 1000 }
+    notes: { type: String, trim: true, maxlength: 1000 },
+    shares: { type: Number, min: 0, default: 0 },
   },
   { timestamps: true }
 )
 
-// Indexes for better query performance
+// Indexes for query performance
 investmentSchema.index({ investorId: 1, status: 1 })
 investmentSchema.index({ farmId: 1, status: 1 })
 investmentSchema.index({ investmentType: 1, status: 1 })
@@ -64,33 +66,28 @@ investmentSchema.index({ investmentDate: -1 })
 investmentSchema.index({ maturityDate: 1 })
 investmentSchema.index({ nextPayoutDate: 1 })
 
-// Virtual for investment duration in days
+// Virtuals
 investmentSchema.virtual("investmentDuration").get(function (this: IInvestment) {
   if (!this.maturityDate) return null
   const diffTime = Math.abs(this.maturityDate.getTime() - this.investmentDate.getTime())
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 })
 
-// Virtual for current ROI percentage
 investmentSchema.virtual("currentROIPercentage").get(function (this: IInvestment) {
   if (this.amount <= 0) return 0
   return (this.roiEarned / this.amount) * 100
 })
 
-// Virtual for remaining amount to be paid out
 investmentSchema.virtual("remainingPayout").get(function (this: IInvestment) {
   return Math.max(0, this.amount + this.roiEarned - this.totalPayouts)
 })
 
-// Virtual for days until next payout
 investmentSchema.virtual("daysUntilNextPayout").get(function (this: IInvestment) {
   if (!this.nextPayoutDate) return null
   const now = new Date()
   const diffTime = this.nextPayoutDate.getTime() - now.getTime()
   return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
 })
-
-// Note: Pre-save middleware removed for now - payout calculations will be handled in service layer
 
 export const Investment: Model<IInvestment> = mongoose.model<IInvestment>("Investment", investmentSchema)
 export default Investment

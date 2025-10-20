@@ -1,33 +1,25 @@
 import type { Server as HTTPServer } from "http"
 import { Server as SocketIOServer, type Socket } from "socket.io"
-import { getBlockchainService } from "../services/blockchain.services"
 
-export class WebSocketManager {
-  private io: SocketIOServer
+export class WebSocketService {
+  private io: SocketIOServer | null = null
   private connectedUsers: Map<string, string> = new Map()
 
-  constructor(httpServer: HTTPServer) {
+  initialize(httpServer: HTTPServer): void {
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: process.env.FRONTEND_URL,
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
         methods: ["GET", "POST"],
       },
     })
 
-    this.setupMiddleware()
     this.setupEventHandlers()
-    this.setupBlockchainListeners()
-  }
-
-  private setupMiddleware(): void {
-    this.io.use((socket, next) => {
-      const token = socket.handshake.auth.token
-      if (!token) return next(new Error("Authentication error"))
-      next()
-    })
+    console.log("[WebSocket] Service initialized")
   }
 
   private setupEventHandlers(): void {
+    if (!this.io) return
+
     this.io.on("connection", (socket: Socket) => {
       console.log(`[WebSocket] User connected: ${socket.id}`)
 
@@ -38,6 +30,7 @@ export class WebSocketManager {
 
       socket.on("farm:subscribe", (farmId: string) => {
         socket.join(`farm:${farmId}`)
+        console.log(`[WebSocket] Socket ${socket.id} subscribed to farm ${farmId}`)
       })
 
       socket.on("investment:subscribe", (investmentId: string) => {
@@ -60,61 +53,44 @@ export class WebSocketManager {
     })
   }
 
-  private setupBlockchainListeners(): void {
-    try {
-      const blockchainService = getBlockchainService()
-
-      blockchainService.on("blockchain:farmCreated", (data) => {
-        this.io.emit("blockchain:farmCreated", data)
-      })
-
-      blockchainService.on("blockchain:investmentMade", (data) => {
-        this.io.to(`farm:${data.farmId}`).emit("blockchain:investmentMade", data)
-      })
-
-      blockchainService.on("blockchain:fundsDisbursed", (data) => {
-        this.io.to(`farm:${data.farmId}`).emit("blockchain:fundsDisbursed", data)
-      })
-
-      blockchainService.on("blockchain:proceedsDeposited", (data) => {
-        this.io.to(`farm:${data.farmId}`).emit("blockchain:proceedsDeposited", data)
-      })
-
-      blockchainService.on("blockchain:payoutClaimed", (data) => {
-        this.io.to(`investment:${data.investmentId}`).emit("blockchain:payoutClaimed", data)
-      })
-
-      console.log("[WebSocket] Blockchain listeners setup complete")
-    } catch (error) {
-      console.error("[WebSocket] Error setting up blockchain listeners:", error)
+  broadcast(event: string, data: any): void {
+    if (!this.io) {
+      console.warn("[WebSocket] Cannot broadcast - service not initialized")
+      return
     }
+    this.io.emit(event, data)
   }
 
   broadcastToFarm(farmId: string, event: string, data: any): void {
+    if (!this.io) return
     this.io.to(`farm:${farmId}`).emit(event, data)
   }
 
   broadcastToInvestment(investmentId: string, event: string, data: any): void {
+    if (!this.io) return
     this.io.to(`investment:${investmentId}`).emit(event, data)
   }
 
-  broadcastToAll(event: string, data: any): void {
-    this.io.emit(event, data)
-  }
-
-  getIO(): SocketIOServer {
+  getIO(): SocketIOServer | null {
     return this.io
   }
 }
 
-let wsManager: WebSocketManager | null = null
+let wsService: WebSocketService | null = null
 
-export function initializeWebSocket(httpServer: HTTPServer): WebSocketManager {
-  if (!wsManager) wsManager = new WebSocketManager(httpServer)
-  return wsManager
+export function initializeWebSocketService(httpServer?: HTTPServer): WebSocketService {
+  if (!wsService) {
+    wsService = new WebSocketService()
+    if (httpServer) {
+      wsService.initialize(httpServer)
+    }
+  }
+  return wsService
 }
 
-export function getWebSocketManager(): WebSocketManager {
-  if (!wsManager) throw new Error("WebSocket manager not initialized")
-  return wsManager
+export function getWebSocketService(): WebSocketService {
+  if (!wsService) {
+    wsService = new WebSocketService()
+  }
+  return wsService
 }

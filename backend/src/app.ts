@@ -10,6 +10,7 @@ import { setupSwagger } from "./config/swagger"
 import { errorHandler } from "./middleware/errorHandler.middleware"
 import { initializeBlockchainService } from "./services/blockchain.services"
 import { testBlockchainConnection } from "./config/blockchain.config"
+import { initializeEventSync } from "./services/event-sync.service"
 
 initializeMagic()
 const app = express();
@@ -17,6 +18,7 @@ const app = express();
 
 (async () => {
   initializeBlockchainService()
+  initializeEventSync()
   await testBlockchainConnection()
 })()
 app.set("trust proxy", 1)
@@ -102,7 +104,7 @@ app.get("/api/health", (req, res) => {
 
 // Routes
 app.use("/api/farms", farmRoutes)
-app.use("/api/investments", investmentRoutes)
+// app.use("/api/investments", investmentRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/admin", adminRoutes)
 

@@ -15,7 +15,7 @@ export class BlockchainService extends EventEmitter {
   private signer: ethers.Wallet
   private contract: ethers.Contract
   private pollingInterval: NodeJS.Timeout | null = null
-  private lastBlockNumber: number = 0
+  private lastBlockNumber = 0
 
   constructor() {
     super()
@@ -96,8 +96,171 @@ export class BlockchainService extends EventEmitter {
           }
         }
 
-        // Repeat structure for FundDisbursed, InvestorClaimed, InvestorRefunded, FarmVerified, FarmClosed...
-        // (Unmodified for brevity)
+        const farmVerifiedFilter = this.contract.filters.FarmVerified?.()
+        if (farmVerifiedFilter) {
+          const logs = await this.provider.getLogs({
+            ...farmVerifiedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "FarmVerified") {
+                const [farmId] = event.args
+                console.log("[Blockchain Event] Farm verified:", { farmId: farmId.toString() })
+                this.emit("blockchain:farmVerified", { farmId: farmId.toString(), event })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing FarmVerified log:", parseError)
+            }
+          }
+        }
+
+        const fundDisbursedFilter = this.contract.filters.FundDisbursed?.()
+        if (fundDisbursedFilter) {
+          const logs = await this.provider.getLogs({
+            ...fundDisbursedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "FundDisbursed") {
+                const [farmId, farmer, amount] = event.args
+                console.log("[Blockchain Event] Funds disbursed:", {
+                  farmId: farmId.toString(),
+                  farmer,
+                  amount: ethers.formatEther(amount),
+                })
+                this.emit("blockchain:fundDisbursed", {
+                  farmId: farmId.toString(),
+                  farmer,
+                  amount: ethers.formatEther(amount),
+                  event,
+                })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing FundDisbursed log:", parseError)
+            }
+          }
+        }
+
+        const proceedsDepositedFilter = this.contract.filters.ProceedsDeposited?.()
+        if (proceedsDepositedFilter) {
+          const logs = await this.provider.getLogs({
+            ...proceedsDepositedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "ProceedsDeposited") {
+                const [farmId, amount] = event.args
+                console.log("[Blockchain Event] Proceeds deposited:", {
+                  farmId: farmId.toString(),
+                  amount: ethers.formatEther(amount),
+                })
+                this.emit("blockchain:proceedsDeposited", {
+                  farmId: farmId.toString(),
+                  amount: ethers.formatEther(amount),
+                  event,
+                })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing ProceedsDeposited log:", parseError)
+            }
+          }
+        }
+
+        const investorClaimedFilter = this.contract.filters.InvestorClaimed?.()
+        if (investorClaimedFilter) {
+          const logs = await this.provider.getLogs({
+            ...investorClaimedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "InvestorClaimed") {
+                const [farmId, investor, amount] = event.args
+                console.log("[Blockchain Event] Investor claimed:", {
+                  farmId: farmId.toString(),
+                  investor,
+                  amount: ethers.formatEther(amount),
+                })
+                this.emit("blockchain:investorClaimed", {
+                  farmId: farmId.toString(),
+                  investor,
+                  amount: ethers.formatEther(amount),
+                  event,
+                })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing InvestorClaimed log:", parseError)
+            }
+          }
+        }
+
+        const investorRefundedFilter = this.contract.filters.InvestorRefunded?.()
+        if (investorRefundedFilter) {
+          const logs = await this.provider.getLogs({
+            ...investorRefundedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "InvestorRefunded") {
+                const [farmId, investor, amount] = event.args
+                console.log("[Blockchain Event] Investor refunded:", {
+                  farmId: farmId.toString(),
+                  investor,
+                  amount: ethers.formatEther(amount),
+                })
+                this.emit("blockchain:investorRefunded", {
+                  farmId: farmId.toString(),
+                  investor,
+                  amount: ethers.formatEther(amount),
+                  event,
+                })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing InvestorRefunded log:", parseError)
+            }
+          }
+        }
+
+        const farmClosedFilter = this.contract.filters.FarmClosed?.()
+        if (farmClosedFilter) {
+          const logs = await this.provider.getLogs({
+            ...farmClosedFilter,
+            fromBlock,
+            toBlock: currentBlockNumber,
+          })
+
+          for (const log of logs) {
+            try {
+              const event = this.contract.interface.parseLog(log)
+              if (event?.name === "FarmClosed") {
+                const [farmId] = event.args
+                console.log("[Blockchain Event] Farm closed:", { farmId: farmId.toString() })
+                this.emit("blockchain:farmClosed", { farmId: farmId.toString(), event })
+              }
+            } catch (parseError) {
+              console.error("[Blockchain] Error parsing FarmClosed log:", parseError)
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("[Blockchain] Polling error:", error)
@@ -121,7 +284,7 @@ export class BlockchainService extends EventEmitter {
         ethers.parseUnits(Math.round(farmData.area).toString(), 0),
         ethers.parseEther(farmData.fundingGoal.toString()),
         farmData.duration,
-        farmData.farmerAddress
+        farmData.farmerAddress,
       )
 
       const result = await this.waitForTransaction(tx.hash)
@@ -129,7 +292,9 @@ export class BlockchainService extends EventEmitter {
       return result
     } catch (error) {
       console.error("[Blockchain] Error creating farm:", error)
-      throw new Error(`Failed to create farm on blockchain: ${error instanceof Error ? error.message : "Unknown error"}`)
+      throw new Error(
+        `Failed to create farm on blockchain: ${error instanceof Error ? error.message : "Unknown error"}`,
+      )
     }
   }
 
@@ -169,6 +334,18 @@ export class BlockchainService extends EventEmitter {
     } catch (error) {
       console.error("[Blockchain] Error disbursing funds:", error)
       throw new Error(`Failed to disburse funds: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async closeFarmOnChain(farmId: string): Promise<TransactionResult> {
+    try {
+      const tx = await this.contract.delistFarm(farmId)
+      const result = await this.waitForTransaction(tx.hash)
+      this.emit("farm:closed", { farmId, txHash: tx.hash })
+      return result
+    } catch (error) {
+      console.error("[Blockchain] Error closing farm:", error)
+      throw new Error(`Failed to close farm: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 
