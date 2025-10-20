@@ -83,7 +83,7 @@ export function FarmCard({ farm, index }: FarmCardProps) {
         </CardContent>
 
         <CardFooter className="p-6 pt-0">
-          <Button asChild className="w-full group-hover:shadow-lg transition-shadow">
+          <Button asChild className="w-full group-hover:shadow-lg transition-shadow" >
             <Link href={`/farm/${farm.id}`}>View Details</Link>
           </Button>
         </CardFooter>

@@ -70,7 +70,7 @@ export function FarmFilters({
           </Label>
           <Slider
             min={0}
-            max={25}
+            max={100}
             step={1}
             value={roiRange}
             onValueChange={(value) => setRoiRange(value as [number, number])}
