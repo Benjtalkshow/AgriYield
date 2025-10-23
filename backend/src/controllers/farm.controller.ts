@@ -3,7 +3,7 @@ import type { AuthRequest } from "../middleware/auth.middleware"
 import { FarmService } from "../services/farm.service"
 import { Investment } from "../models/investment.model"
 import { getBlockchainService } from "../services/blockchain.services"
-import User from "../models/user.model"
+// import User from "../models/user.model"
 import { resolveWalletAddress } from "../utils/resolve-wallet-address"
 
 export class FarmController {
