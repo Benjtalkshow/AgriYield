@@ -1,11 +1,12 @@
 import type { Request, Response, NextFunction } from "express"
 import { AuthService } from "../services/authService"
+import { UserRole } from "../models/user.model"
 
 export interface AuthRequest extends Request {
   user?: {
     userId: string
     email: string
-    role: string
+    role: UserRole
   }
 }
 
@@ -26,7 +27,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role as UserRole,
     }
 
     next()
@@ -58,6 +59,22 @@ export const authorize = (...roles: string[]) => {
         success: false,
         message: "You do not have permission to access this resource",
       })
+    }
+
+    next()
+  }
+}
+
+export const requireRole = (...roles: UserRole[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" })
+      return
+    }
+
+    if (!roles.includes(req.user.role)) {
+      res.status(403).json({ error: "Insufficient permissions" })
+      return
     }
 
     next()

@@ -9,57 +9,61 @@ export class AuthController {
    * POST /auth/signup
    * Register a new user (investor or farmer)
    */
-  static async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { email, name, role, farmName, farmDescription, location, nin, magicToken } = req.body
+ static async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email, name, role, farmName, farmDescription, location, nin, magicToken } = req.body
 
-      validateFarmerFields(req.body)
-
-      const magicMetadata = await AuthService.authenticateWithMagic(magicToken)
-
-      if (magicMetadata.email.toLowerCase() !== email.toLowerCase()) {
-        throw new AppError("Email mismatch with Magic authentication", 400)
-      }
-
-      const existingUser = await AuthService.userExists(email)
-      if (existingUser) {
-        throw new AppError("User with this email already exists", 409)
-      }
-
-      const user = await AuthService.registerUser({
-        email,
-        name,
-        role,
-        farmName,
-        farmDescription,
-        location,
-        nin,
-        magicToken,
-      })
-
-      const token = AuthService.generateToken(String(user._id), user.email, user.role)
-
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: {
-          user: {
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            farmName: user.farmName,
-            location: user.location,
-            verified: user.verified,
-            kycStatus: user.kycStatus,
-          },
-          token,
-        },
-      })
-    } catch (error) {
-      next(error)
+    if (!email || !name || !role || !farmName ||  !location || !magicToken) {
+      throw new AppError("Missing required fields", 400)
     }
+
+    validateFarmerFields(req.body) 
+
+    const magicMetadata = await AuthService.authenticateWithMagic(magicToken)
+    if (magicMetadata.email.toLowerCase() !== email.toLowerCase()) {
+      throw new AppError("Email mismatch with Magic authentication", 400)
+    }
+
+    const existingUser = await AuthService.userExists(email)
+    if (existingUser) {
+      throw new AppError("User with this email already exists", 409)
+    }
+
+    const user = await AuthService.registerUser({
+      email,
+      name,
+      role,
+      farmName,
+      farmDescription,
+      location,
+      nin,
+      magicToken,
+    })
+
+    const token = AuthService.generateToken(String(user._id), user.email, user.role)
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          farmName: user.farmName,
+          location: user.location,
+          verified: user.verified,
+          kycStatus: user.kycStatus,
+        },
+        token,
+      },
+    })
+  } catch (error) {
+    next(error)
   }
+}
+
 
   /**
    * POST /auth/signin

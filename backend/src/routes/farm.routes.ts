@@ -1,357 +1,281 @@
 import { Router } from "express"
 import { FarmController } from "../controllers/farm.controller"
-import { authenticate } from "../middleware/auth.middleware"
-import { validate } from "../middleware/validation.middleware"
-import { createFarmSchema, updateFarmSchema } from "../validators/farm.validator"
+import { authenticate, requireRole } from "../middleware/auth.middleware"
+import { UserRole } from "../types/index"
 
 const router = Router()
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Farm:
- *       type: object
- *       required:
- *         - name
- *         - description
- *         - farmerId
- *         - farmType
- *         - totalArea
- *         - cultivatedArea
- *         - irrigationType
- *         - expectedYield
- *       properties:
- *         name:
- *           type: string
- *           description: Farm name
- *         description:
- *           type: string
- *           description: Farm description
- *         location:
- *           type: object
- *           properties:
- *             address:
- *               type: string
- *             coordinates:
- *               type: object
- *               properties:
- *                 latitude:
- *                   type: number
- *                 longitude:
- *                   type: number
- *             state:
- *               type: string
- *             country:
- *               type: string
- *         farmerId:
- *           type: string
- *           description: ID of the farmer who owns this farm
- *         farmType:
- *           type: string
- *           enum: [crop, livestock, mixed, poultry, fishery]
- *         totalArea:
- *           type: number
- *           description: Total farm area in hectares
- *         cultivatedArea:
- *           type: number
- *           description: Cultivated area in hectares
- *         irrigationType:
- *           type: string
- *           enum: [rainfed, irrigated, supplemental]
- *         crops:
- *           type: array
- *           items:
- *             type: string
- *         status:
- *           type: string
- *           enum: [active, inactive, pending, completed]
- *         images:
- *           type: array
- *           items:
- *             type: string
- *         documents:
- *           type: array
- *           items:
- *             type: string
- *         expectedYield:
- *           type: number
- *           description: Expected yield in tons
+ * tags:
+ *   name: Farms
+ *   description: Farm management and investment endpoints
  */
 
 /**
- * @swagger
- * /api/farms:
- *   post:
- *     summary: Create a new farm
- *     tags: [Farms]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Farm'
- *     responses:
- *       201:
- *         description: Farm created successfully
- *       400:
- *         description: Invalid input
+ * Public routes
  */
-router.post("/", authenticate, validate(createFarmSchema), FarmController.createFarm)
 
 /**
  * @swagger
  * /api/farms:
  *   get:
- *     summary: Get all farms with optional filtering
+ *     summary: Get all farms
  *     tags: [Farms]
  *     parameters:
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *         description: Filter by farm status
  *       - in: query
  *         name: farmType
  *         schema:
  *           type: string
- *         description: Filter by farm type
  *       - in: query
  *         name: state
  *         schema:
  *           type: string
- *         description: Filter by state
  *       - in: query
- *         name: isVerified
+ *         name: verified
  *         schema:
  *           type: boolean
- *         description: Filter by verification status
  *       - in: query
- *         name: farmerId
+ *         name: farmer
  *         schema:
  *           type: string
- *         description: Filter by farmer ID
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
- *           minimum: 1
- *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           minimum: 1
- *           maximum: 100
- *         description: Number of items per page
  *     responses:
  *       200:
  *         description: List of farms
  */
-router.get("/",authenticate, FarmController.getFarms)
+router.get("/", FarmController.getAllFarms)
 
 /**
  * @swagger
- * /api/farms/search:
+ * /api/farms/{farmId}:
  *   get:
- *     summary: Search farms by location, crops, or farm type
- *     tags: [Farms]
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: Search query
- *       - in: query
- *         name: farmType
- *         schema:
- *           type: string
- *         description: Filter by farm type
- *       - in: query
- *         name: state
- *         schema:
- *           type: string
- *         description: Filter by state
- *       - in: query
- *         name: minArea
- *         schema:
- *           type: number
- *         description: Minimum farm area
- *       - in: query
- *         name: maxArea
- *         schema:
- *           type: number
- *         description: Maximum farm area
- *     responses:
- *       200:
- *         description: Search results
- */
-router.get("/search",authenticate, FarmController.searchFarms)
-
-/**
- * @swagger
- * /api/farms/{id}:
- *   get:
- *     summary: Get farm by ID
+ *     summary: Get single farm by ID
  *     tags: [Farms]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: farmId
  *         required: true
  *         schema:
  *           type: string
- *         description: Farm ID
  *     responses:
  *       200:
- *         description: Farm details
+ *         description: Farm object
  *       404:
  *         description: Farm not found
  */
-router.get("/:id",authenticate, FarmController.getFarmById)
+router.get("/:farmId", FarmController.getFarmById)
 
 /**
  * @swagger
- * /api/farms/{id}:
- *   put:
- *     summary: Update farm by ID
+ * /api/farms/{farmId}/investments:
+ *   get:
+ *     summary: Get investments for a specific farm
  *     tags: [Farms]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: farmId
  *         required: true
  *         schema:
  *           type: string
- *         description: Farm ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of investments
+ */
+router.get("/:farmId/investments", FarmController.getFarmInvestments)
+
+/**
+ * Authenticated routes (Farmer)
+ */
+
+/**
+ * @swagger
+ * /api/farms/metadata:
+ *   post:
+ *     summary: Create farm metadata
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Farm'
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Metadata created,  call smart contract
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/metadata", authenticate, requireRole(UserRole.Farmer), FarmController.createFarmMetadata)
+
+/**
+ * @swagger
+ * /api/farms/{farmId}/metadata:
+ *   put:
+ *     summary: Update farm metadata
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *     responses:
  *       200:
- *         description: Farm updated successfully
+ *         description: Farm metadata updated
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Farm not found
  */
-router.put("/:id",authenticate, validate(updateFarmSchema), FarmController.updateFarm)
+router.put("/:farmId/metadata", authenticate, requireRole(UserRole.Farmer), FarmController.updateFarmMetadata)
 
 /**
  * @swagger
- * /api/farms/{id}:
- *   delete:
- *     summary: Delete farm by ID
+ * /api/farms/user/investments:
+ *   get:
+ *     summary: Get investments for logged-in user
  *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of user investments
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/user/investments", authenticate, FarmController.getUserInvestments)
+
+/**
+ * Admin routes
+ */
+
+/**
+ * @swagger
+ * /api/farms/{farmId}/verify:
+ *   post:
+ *     summary: Verify farm (Admin only)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: farmId
  *         required: true
  *         schema:
  *           type: string
- *         description: Farm ID
  *     responses:
  *       200:
- *         description: Farm deleted successfully
+ *         description: Verification transaction submitted
+ *       500:
+ *         description: Failed to verify farm
+ */
+router.post("/:farmId/verify", authenticate, requireRole(UserRole.Admin), FarmController.verifyFarm)
+
+/**
+ * @swagger
+ * /api/farms/{farmId}/disburse:
+ *   post:
+ *     summary: Disburse funds to farmer (Admin only)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fund disbursement transaction submitted
+ *       500:
+ *         description: Failed to disburse funds
+ */
+router.post("/:farmId/disburse", authenticate, requireRole(UserRole.Admin), FarmController.disburseFunds)
+
+/**
+ * @swagger
+ * /api/farms/{farmId}/delist:
+ *   post:
+ *     summary: Delist/close farm (Admin only)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Farm delist transaction submitted
+ *       500:
+ *         description: Failed to delist farm
+ */
+router.post("/:farmId/delist", authenticate, requireRole(UserRole.Admin), FarmController.delistFarm)
+
+/**
+ * @swagger
+ * /api/farms/{farmId}/sync:
+ *   post:
+ *     summary: Sync farm data from blockchain (Admin only)
+ *     tags: [Farms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: farmId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Farm synced successfully
  *       404:
  *         description: Farm not found
+ *       500:
+ *         description: Failed to sync farm
  */
-router.delete("/:id",authenticate, FarmController.deleteFarm)
-
-/**
- * @swagger
- * /api/farms/{id}/summary:
- *   get:
- *     summary: Get farm summary with investment and harvest data
- *     tags: [Farms]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Farm ID
- *     responses:
- *       200:
- *         description: Farm summary
- */
-router.get("/:id/summary",authenticate, FarmController.getFarmSummary)
-
-// /**
-//  * @swagger
-//  * /api/farms/{id}/verify:
-//  *   put:
-//  *     summary: Verify farm (admin only)
-//  *     tags: [Farms]
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: string
-//  *         description: Farm ID
-//  *     responses:
-//  *       200:
-//  *         description: Farm verified successfully
-//  *       404:
-//  *         description: Farm not found
-//  */
-// // router.put("/:id/verify",authenticate, authorize, FarmController.verifyFarm)
-
-/**
- * @swagger
- * /api/farms/farmer/{farmerId}:
- *   get:
- *     summary: Get farms by farmer ID
- *     tags: [Farms]
- *     parameters:
- *       - in: path
- *         name: farmerId
- *         required: true
- *         schema:
- *           type: string
- *         description: Farmer ID
- *     responses:
- *       200:
- *         description: List of farmer's farms
- */
-router.get("/farmer/:farmerId",authenticate, FarmController.getFarmsByFarmer)
-
-// /**
-//  * @swagger
-//  * /api/farms/pending:
-//  *   get:
-//  *     summary: Get all pending farms (admin function)
-//  *     tags: [Farms]
-//  *     security:
-//  *       - bearerAuth: []
-//  *     responses:
-//  *       200:
-//  *         description: List of pending farms
-//  */
-// // router.get("/pending", authenticate, authorize, FarmController.getPendingFarms)
-
-// /**
-//  * @swagger
-//  * /api/farms/{id}/delist:
-//  *   put:
-//  *     summary: Delist farm (admin function)
-//  *     tags: [Farms]
-//  *     security:
-//  *       - bearerAuth: []
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: string
-//  *         description: Farm ID
-//  *     responses:
-//  *       200:
-//  *         description: Farm delisted successfully
-//  *       404:
-//  *         description: Farm not found
-//  */
-// // router.put("/:id/delist", authorize, authenticate, FarmController.delistFarm)
+router.post("/:farmId/sync", authenticate, requireRole(UserRole.Admin), FarmController.syncFarm)
 
 export default router

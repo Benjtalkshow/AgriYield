@@ -30,9 +30,7 @@ export const createProvider = async (): Promise<ethers.JsonRpcProvider> => {
     return provider
   } catch (error) {
     console.error("Connection to Lisk Sepolia failed:", error)
-    throw new Error(
-      `Failed to connect to blockchain: ${error instanceof Error ? error.message : "Unknown error"}`
-    )
+    throw new Error(`Failed to connect to blockchain: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
 
@@ -90,4 +88,3 @@ export const testBlockchainConnection = async (): Promise<void> => {
     console.error("Blockchain connection test failed:", error)
   }
 }
-
