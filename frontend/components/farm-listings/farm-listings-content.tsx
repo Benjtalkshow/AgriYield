@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FarmCard } from "./farm-card";
 import { FarmFilters } from "./farm-filters";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import SimpleFarmsProvider from "@/lib/farm-data";
 
 export interface Farm {
   id: string;
@@ -30,39 +30,42 @@ export interface Farm {
 }
 
 export function FarmListingsContent() {
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // ✅ Get farms from the provider (only farms)
+  const { farms: blockchainFarms } = SimpleFarmsProvider();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCrop, setSelectedCrop] = useState<string>("all");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [roiRange, setRoiRange] = useState<[number, number]>([0, 25]);
+  const [roiRange, setRoiRange] = useState<[number, number]>([0, 50]);
 
-  // 🧠 Fetch farm data from API or blockchain
-  useEffect(() => {
-    const fetchFarms = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // ✅ Guard against undefined data
+  const onChainFarms = blockchainFarms ?? [];
 
-        // Example: from your API or wagmi publicClient call
-        const res = await fetch("/api/farms"); // or call your contract via wagmi/viem
-        if (!res.ok) throw new Error("Failed to fetch farms");
-
-        const data = await res.json();
-        setFarms(data.farms || []);
-      } catch (err: any) {
-        console.error("Error fetching farms:", err);
-        toast.error("Failed to load farm listings");
-        setError(err.message || "Failed to load farms");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFarms();
-  }, []);
+  // ✅ Transform blockchain farm data to UI format
+  const farms: Farm[] = onChainFarms.map((farm: any, index: number) => ({
+    id: farm.data.farmId?.toString() ?? `${index}`,
+    name: farm.data.name ?? "Unnamed Farm",
+    farmer: farm.data.farmer ?? "",
+    cropType: "Various",
+    image: "/golden-wheat-farm.png",
+    duration: "6 months",
+    roi: Number(farm.data.maxROI) || 0,
+    location: "Nigeria",
+    city: "Lagos",
+    state: "Lagos",
+    fundingGoal: Number(farm.data.fundingGoal) || 0,
+    amountRaised: Number(farm.data.totalInvested) || 0,
+    fundingProgress: Math.round(
+      (Number(farm.data.totalInvested || 0) /
+        Number(farm.data.fundingGoal || 1)) *
+        100
+    ),
+    minInvestment: Number(farm.data.sharePrice) || 0,
+    description: farm.data.description ?? "",
+    coordinates: [6.5964, 3.3486],
+    verified: farm.data.verified ?? false,
+    investors: 0,
+  }));
 
   // 🧮 Filtering logic
   const filteredFarms = farms.filter((farm) => {
@@ -128,13 +131,7 @@ export function FarmListingsContent() {
         />
 
         {/* Results */}
-        {loading ? (
-          <div className="text-center py-20 text-muted-foreground">
-            Loading farms...
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 text-destructive">⚠️ {error}</div>
-        ) : filteredFarms.length > 0 ? (
+        {filteredFarms.length > 0 ? (
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">

@@ -10,19 +10,19 @@ import { WhyAgriYield } from "@/components/landing/why-agriyield"
 import { JoinRevolution } from "@/components/landing/join-revolution"
 import { StatsSection } from "@/components/landing/stats-section"
 import { TransactionDemo } from "@/components/demo/transaction-demo"
-import { useAuth } from "@/lib/auth-context"
+// import { useAuth } from "@/lib/auth-context"
 
 
 export default function HomePage() {
-  const { user, isLoading } = useAuth()
+  // const { user, isLoading } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!isLoading && user?.isVerified && user?.walletConnected) {
-      const dashboard = user.role === "farmer" ? "/farmer" : "/investor"
-      router.push(dashboard)
-    }
-  }, [user, isLoading, router])
+  // useEffect(() => {
+  //   if (!isLoading && user?.isVerified && user?.walletConnected) {
+  //     const dashboard = user.role === "farmer" ? "/farmer" : "/investor"
+  //     router.push(dashboard)
+  //   }
+  // }, [user, isLoading, router])
 
   return (
     <div className="min-h-screen">
