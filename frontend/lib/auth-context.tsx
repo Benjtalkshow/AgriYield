@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { initializeMagic } from "./auth"
 
 type UserRole = "farmer" | "investor" | "admin" | null
@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingFarmDetails, setPendingFarmDetails] = useState<FarmDetails | null>(null)
   const [emailSent, setEmailSent] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isLoggedIn = localStorage.getItem("agriyield_isLoggedIn") === "true"
         const token = getCookie("agriyield_token")
 
+        // Only attempt to restore session if we have both login flag and token
         if (isLoggedIn && token) {
           const magicInstance = await initializeMagic()
           if (magicInstance) {
@@ -93,8 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
               if (response.ok) {
                 const data = await response.json()
-                setUser(data.data.user)
+                const userData = data.data.user
+                setUser(userData)
                 setIsLoading(false)
+
+                if (pathname === "/" || pathname === "/signin" || pathname === "/signup") {
+                  const dashboardMap: Record<string, string> = {
+                    farmer: "/dashboard/farmer",
+                    investor: "/dashboard/investor",
+                    admin: "/dashboard/admin",
+                  }
+                  const redirectPath = dashboardMap[userData.role] || "/dashboard/investor"
+                  router.push(redirectPath)
+                }
                 return
               } else {
                 await magicInstance.user.logout()
@@ -123,10 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     restoreSession()
-  }, [API_BASE_URL])
+  }, [API_BASE_URL, pathname, router])
 
   const signIn = async (email: string) => {
     try {
+      // Check if user exists in database
       const checkResponse = await fetch(`${API_BASE_URL}/auth/check-user`, {
         method: "POST",
         headers: {
@@ -138,14 +152,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const checkData = await checkResponse.json()
 
       if (!checkResponse.ok || !checkData.data.exists) {
+        // User doesn't exist - redirect to signup instead of sending magic link
         throw new Error("User not found. Please sign up first.")
       }
 
+      // User exists, now send magic link
       const magicInstance = await initializeMagic()
       if (!magicInstance) throw new Error("Magic SDK not initialized")
 
       await magicInstance.auth.loginWithMagicLink({ email })
-      window.location.reload()
+
       setPendingEmail(email)
       setPendingRole(null)
       setPendingName(null)
@@ -159,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, name: string, role: UserRole, farmDetails?: FarmDetails) => {
     try {
+      // Check if user already exists in database
       const checkResponse = await fetch(`${API_BASE_URL}/auth/check-user`, {
         method: "POST",
         headers: {
@@ -170,14 +187,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const checkData = await checkResponse.json()
 
       if (checkResponse.ok && checkData.data.exists) {
+        // User already exists - redirect to signin instead of sending magic link
         throw new Error("User already exists. Please sign in instead.")
       }
 
+      // User doesn't exist, now send magic link
       const magicInstance = await initializeMagic()
       if (!magicInstance) throw new Error("Magic SDK not initialized")
 
       await magicInstance.auth.loginWithMagicLink({ email })
-      window.location.reload()
 
       setPendingEmail(email)
       setPendingRole(role)
@@ -285,7 +303,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const magicInstance = await initializeMagic()
       if (magicInstance) await magicInstance.user.logout()
-      window.location.reload()
     } catch (error) {
       console.error(" Logout error:", error)
     }

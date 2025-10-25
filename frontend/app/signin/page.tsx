@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -16,8 +16,31 @@ export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const { signIn, isVerifying } = useAuth()
+  const { signIn, isVerifying, handleMagicLinkCallback } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      try {
+        await handleMagicLinkCallback()
+      } catch (err) {
+        console.error("[v0] Magic link callback error:", err)
+        setError(err instanceof Error ? err.message : "Verification failed")
+      }
+    }
+
+    const checkMagicCallback = async () => {
+      const magicInstance = await import("@/lib/auth").then((m) => m.initializeMagic())
+      if (magicInstance) {
+        const isLoggedIn = await magicInstance.user.isLoggedIn()
+        if (isLoggedIn) {
+          handleCallback()
+        }
+      }
+    }
+
+    checkMagicCallback()
+  }, [handleMagicLinkCallback])
 
   if (isVerifying) {
     return (
