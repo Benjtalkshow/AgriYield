@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import Link from "next/link"
 import { Mail, Sprout, TrendingUp, ArrowLeft, CheckCircle2 } from "lucide-react"
 
@@ -22,8 +23,25 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [emailSent, setEmailSent] = useState(false)
-  const { signUp } = useAuth()
+  const { signUp, isVerifying } = useAuth()
   const router = useRouter()
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-emerald-950 dark:via-slate-900 dark:to-amber-950">
+        <div className="w-full max-w-md">
+          <Card className="border-emerald-200 dark:border-emerald-800">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-2xl font-bold">Redirecting...</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center py-8">
+              <LoadingSpinner message="Redirecting to dashboard..." />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +64,14 @@ export default function SignUpPage() {
       await signUp(email, name, role, farmDetails)
       setEmailSent(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign up")
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign up"
+      setError(errorMessage)
+
+      if (errorMessage.includes("already exists")) {
+        setTimeout(() => {
+          router.push("/signin")
+        }, 2000)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -253,7 +278,12 @@ export default function SignUpPage() {
                 </div>
               )}
 
-              {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
+              {error && (
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  {error}
+                  {error.includes("already exists") && <p className="text-xs mt-1">Redirecting to signin...</p>}
+                </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Continue"}

@@ -383,4 +383,6 @@ router.post("/connect-wallet", authenticate, validate(connectWalletSchema), Auth
  */
 router.get("/profile", authenticate, AuthController.getProfile)
 
+router.post('/check-user', AuthController.checkUser);
+
 export default router

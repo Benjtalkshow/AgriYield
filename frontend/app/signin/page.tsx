@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import Link from "next/link"
 import { Mail, ArrowLeft } from "lucide-react"
 
@@ -15,8 +16,25 @@ export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const { signIn, pendingEmail } = useAuth()
+  const { signIn, isVerifying } = useAuth()
   const router = useRouter()
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-emerald-950 dark:via-slate-900 dark:to-amber-950">
+        <div className="w-full max-w-md">
+          <Card className="border-emerald-200 dark:border-emerald-800">
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-2xl font-bold">Redirecting...</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center py-8">
+              <LoadingSpinner message="Redirecting to dashboard..." />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,10 +43,15 @@ export default function SignInPage() {
 
     try {
       await signIn(email)
-      // Redirect to verify page
-      // router.push("/verify")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign in")
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in"
+      setError(errorMessage)
+
+      if (errorMessage.includes("not found")) {
+        setTimeout(() => {
+          router.push("/signup")
+        }, 2000)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +91,12 @@ export default function SignInPage() {
                 </div>
               </div>
 
-              {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
+              {error && (
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  {error}
+                  {error.includes("not found") && <p className="text-xs mt-1">Redirecting to signup...</p>}
+                </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Sending magic link..." : "Send Magic Link"}
