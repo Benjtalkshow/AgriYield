@@ -3,6 +3,7 @@ import { AuthService } from "../services/authService"
 import { validateFarmerFields } from "../validators/auth.validator"
 import type { AuthRequest } from "../middleware/auth.middleware"
 import { AppError } from "../utils/appError"
+import { connectDB } from "../config/database"
 
 export class AuthController {
   /**
@@ -10,6 +11,8 @@ export class AuthController {
    * Register a new user (investor or farmer)
    */
   static async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
+    await connectDB()
+
     try {
       const { email, name, role, farmName, farmDescription, location, nin, magicToken } = req.body
 
@@ -73,6 +76,8 @@ export class AuthController {
    * Sign in existing user with Magic token
    */
   static async signin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    await connectDB()
+
     try {
       const { magicToken } = req.body
 
@@ -112,6 +117,8 @@ export class AuthController {
    * Added new endpoint to check user existence before sending magic links
    */
   static async checkUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    await connectDB()
+
     try {
       const { email } = req.body
 
@@ -137,6 +144,8 @@ export class AuthController {
    * Connect wallet address to user account (protected)
    */
   static async connectWallet(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    await connectDB()
+
     try {
       const { walletAddress } = req.body
       const userId = req.user?.userId
@@ -177,6 +186,8 @@ export class AuthController {
    * Get authenticated user profile (protected)
    */
   static async getProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    await connectDB()
+
     try {
       const userId = req.user?.userId
 

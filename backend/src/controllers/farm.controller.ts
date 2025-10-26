@@ -5,10 +5,13 @@ import { Investment } from "../models/investment.model"
 import { getBlockchainService } from "../services/blockchain.services"
 // import User from "../models/user.model"
 import { resolveWalletAddress } from "../utils/resolve-wallet-address"
+import { connectDB } from "../config/database"
 
 export class FarmController {
   // Create farm metadata (off-chain)
   static async createFarmMetadata(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const farmer = await resolveWalletAddress(req)
       if (!farmer) {
@@ -38,6 +41,8 @@ export class FarmController {
 
   // Get all farms with filters
   static async getAllFarms(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { status, farmType, state, verified, farmer, page = "1", limit = "10" } = req.query
       const filters = {
@@ -71,6 +76,8 @@ export class FarmController {
 
   // Get single farm by ID
   static async getFarmById(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { id } = req.params
       const farm = await FarmService.getFarmById(id)
@@ -86,6 +93,8 @@ export class FarmController {
 
   // Update farm metadata (off-chain)
   static async updateFarmMetadata(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { id } = req.params
       const farmer = await resolveWalletAddress(req)
@@ -108,6 +117,8 @@ export class FarmController {
 
   // Get farms by farmer
   static async getFarmsByFarmer(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { address } = req.params
       const farms = await FarmService.getFarmsByFarmer(address)
@@ -119,6 +130,8 @@ export class FarmController {
 
   // Search farms
   static async searchFarms(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { q, farmType, state, minArea, maxArea } = req.query
       if (!q || typeof q !== "string") {
@@ -142,6 +155,8 @@ export class FarmController {
 
   // Get investments for a specific farm
   static async getFarmInvestments(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { farmId } = req.params
       const { page = "1", limit = "20" } = req.query
@@ -168,6 +183,8 @@ export class FarmController {
 
   // Get investments for logged-in user
   static async getUserInvestments(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const investor = await resolveWalletAddress(req)
       if (!investor) {
@@ -215,6 +232,8 @@ export class FarmController {
 
   // Verify farm (Admin - calls smart contract)
   static async verifyFarm(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { farmId } = req.params
       const blockchainService = getBlockchainService()
@@ -233,6 +252,8 @@ export class FarmController {
 
   // Disburse funds to farmer (Admin - calls smart contract)
   static async disburseFunds(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { farmId } = req.params
       const blockchainService = getBlockchainService()
@@ -251,6 +272,8 @@ export class FarmController {
 
   // Delist/close farm (Admin - calls smart contract)
   static async delistFarm(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { farmId } = req.params
       const blockchainService = getBlockchainService()
@@ -269,6 +292,8 @@ export class FarmController {
 
   // Manually sync farm data from blockchain (Admin)
   static async syncFarm(req: AuthRequest, res: Response): Promise<void> {
+    await connectDB()
+
     try {
       const { farmId } = req.params
       const blockchainService = getBlockchainService()
