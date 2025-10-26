@@ -5,7 +5,6 @@ import { User } from "../models/user.model"
 import { Farm } from "../models/farm.model"
 import { Investment } from "../models/investment.model"
 import { Harvest } from "../models/harvest.model"
-import { connectDB } from "../config/database"
 
 
 export class AdminController {
@@ -14,7 +13,6 @@ export class AdminController {
    * Get all farms with pagination and filters
    */
   static async getFarms(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
     try {
       const { page = 1, limit = 20, status, verified } = req.query
       const skip = (Number(page) - 1) * Number(limit)
@@ -55,7 +53,6 @@ export class AdminController {
    * Get all users with pagination and role filters
    */
   static async getUsers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
     try {
       const { page = 1, limit = 20, role, verified, kycStatus } = req.query
       const skip = (Number(page) - 1) * Number(limit)
@@ -93,8 +90,6 @@ export class AdminController {
    * Get all investments with pagination and status filters
    */
   static async getInvestments(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
-
     try {
       const { page = 1, limit = 20, status } = req.query
       const skip = (Number(page) - 1) * Number(limit)
@@ -135,8 +130,6 @@ export class AdminController {
    * Verify a farm and update its status
    */
   static async verifyFarm(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
-
     try {
       const { farmId } = req.params
       const { verified, notes } = req.body
@@ -175,8 +168,6 @@ export class AdminController {
    * Approve or reject a harvest submission
    */
   static async approveHarvest(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
-
     try {
       const { harvestId } = req.params
       const { approved, notes } = req.body
@@ -215,8 +206,6 @@ export class AdminController {
    * Get platform analytics and statistics
    */
   static async getAnalytics(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    await connectDB()
-
     try {
       const [
         totalUsers,
